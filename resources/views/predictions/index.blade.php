@@ -5,7 +5,19 @@
         </h2>
     </x-slot>
 
-    <div class="py-12" x-data="{ showModal: false, activeCommentary: {}, activeTeams: {} }">
+    <div class="py-12" 
+         x-data="{ showModal: false, activeCommentary: {}, activeTeams: {} }"
+         x-init="$watch('showModal', value => {
+            if (value) {
+                history.pushState(null, null, '#pundit');
+            } else {
+                if (window.location.hash === '#pundit') {
+                    history.back();
+                }
+            }
+         })"
+         @popstate.window="if (showModal) showModal = false"
+         @keydown.escape.window="showModal = false">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             @if(session('success'))
