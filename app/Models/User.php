@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys;
+use Spatie\LaravelPasskeys\Models\Concerns\InteractsWithPasskeys;
+
+class User extends Authenticatable implements HasPasskeys
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, InteractsWithPasskeys;
 
     /**
      * The attributes that are mass assignable.
@@ -21,6 +24,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'favorite_team',
     ];
 
     /**
@@ -44,5 +48,27 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function predictions()
+    {
+        return $this->hasMany(Prediction::class);
+    }
+
+    /**
+     * Get the user's favorite team logo URL.
+     */
+    public function getFavoriteTeamLogoAttribute()
+    {
+        if (!$this->favorite_team) {
+            return null;
+        }
+        $slug = \Illuminate\Support\Str::slug($this->favorite_team);
+        return asset("images/teams/{$slug}.png");
+    }
+
+    public function tournaments()
+    {
+        return $this->belongsToMany(Tournament::class);
     }
 }
