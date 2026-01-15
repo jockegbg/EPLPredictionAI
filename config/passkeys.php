@@ -25,7 +25,7 @@ return [
      */
     'relying_party' => [
         'name' => config('app.name'),
-        'id' => 'localhost',
+        'id' => env('PASSKEY_RP_ID', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         'icon' => null,
     ],
 
