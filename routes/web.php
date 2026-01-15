@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
     // Admin Routes
     Route::resource('admin/gameweeks', GameweekController::class)->names('admin.gameweeks');
     Route::resource('admin/tournaments', TournamentController::class)->names('admin.tournaments');
+    Route::post('admin/tournaments/{tournament}/sync-users', [TournamentController::class, 'syncAllUsers'])->name('admin.tournaments.sync-users');
     Route::get('admin/import', [App\Http\Controllers\Admin\ImportController::class, 'create'])->name('admin.import.create');
     Route::post('admin/import', [App\Http\Controllers\Admin\ImportController::class, 'store'])->name('admin.import.store');
     Route::post('admin/gameweeks/adjust-points', [GameweekController::class, 'adjustPoints'])->name('admin.gameweeks.adjust-points');

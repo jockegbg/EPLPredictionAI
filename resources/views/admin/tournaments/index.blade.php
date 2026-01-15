@@ -57,7 +57,15 @@
                                     <td class="px-6 py-4 whitespace-no-wrap">{{ $tournament->users->count() }}</td>
                                     <td class="px-6 py-4 whitespace-no-wrap text-sm leading-5 font-medium">
                                         <a href="{{ route('admin.tournaments.edit', $tournament) }}"
-                                            class="text-indigo-400 hover:text-indigo-300 mr-4">Edit</a>
+                                            class="text-indigo-400 hover:text-indigo-300 mr-2">Edit</a>
+
+                                        <form action="{{ route('admin.tournaments.sync-users', $tournament) }}"
+                                            method="POST" class="inline"
+                                            onsubmit="return confirm('Add ALL registered users to this tournament? (Existing associations will be kept)');">
+                                            @csrf
+                                            <button type="submit" class="text-pl-green hover:text-white mr-2"
+                                                title="Sync All Users">Sync Users</button>
+                                        </form>
                                         <form action="{{ route('admin.tournaments.destroy', $tournament) }}" method="POST"
                                             class="inline">
                                             @csrf

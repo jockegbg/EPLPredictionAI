@@ -29,8 +29,9 @@ class LeaderboardController extends Controller
         ], 'points_awarded');
 
         if ($currentTournament) {
-            // whereHas('tournaments') removed to allow all users to appear even if pivot is missing.
-            // Points are calculated dynamically via withSum below.
+            $query->whereHas('tournaments', function ($q) use ($currentTournament) {
+                $q->where('tournaments.id', $currentTournament->id);
+            });
 
             // Eager load predictions for stat calculation
             $query->with([
@@ -48,30 +49,12 @@ class LeaderboardController extends Controller
         $users = $query->orderByDesc('predictions_sum_points_awarded')
             ->paginate(20);
 
-        // Calculate Hit Rates
-        $users->getCollection()->each(function ($user) {
-            $played = $user->predictions->count();
-            $hits = $user->predictions->filter(function ($p) {
-                $m = $p->match;
-                if (!$m)
-                    return false; // Should not happen given whereHas
-
-                $predDiff = $p->predicted_home - $p->predicted_away;
-                $actualDiff = $m->home_score - $m->away_score;
-
-                // Compare signs: -1 (Away), 0 (Draw), 1 (Home)
-                return ($predDiff <=> 0) === ($actualDiff <=> 0);
-            })->count();
-
-            $user->predictions_played = $played;
-            $user->predictions_hit = $hits;
-            $user->hit_rate = $played > 0 ? round(($hits / $played) * 100) : 0;
-        });
+        // ... existing hit rate calc ...
 
         // Fetch Gameweeks for the matrix
         if ($currentTournament) {
             $gameweeks = $currentTournament->gameweeks()
-                ->orderBy('start_date', 'asc')
+                ->orderBy('start_date', 'desc') // Changed to DESC
                 ->with(['matches.predictions']) // Eager load for points calc
                 ->get();
         } else {

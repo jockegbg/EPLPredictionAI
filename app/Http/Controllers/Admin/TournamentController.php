@@ -129,4 +129,12 @@ class TournamentController extends Controller
         return redirect()->route('admin.tournaments.index')
             ->with('success', 'Tournament deleted successfully.');
     }
+
+    public function syncAllUsers(Tournament $tournament): RedirectResponse
+    {
+        $allUserIds = User::pluck('id');
+        $tournament->users()->syncWithoutDetaching($allUserIds);
+
+        return back()->with('success', 'All users have been added to this tournament.');
+    }
 }
