@@ -29,9 +29,8 @@ class LeaderboardController extends Controller
         ], 'points_awarded');
 
         if ($currentTournament) {
-            $query->whereHas('tournaments', function ($q) use ($currentTournament) {
-                $q->where('tournaments.id', $currentTournament->id);
-            });
+            // whereHas('tournaments') removed to allow all users to appear even if pivot is missing.
+            // Points are calculated dynamically via withSum below.
 
             // Eager load predictions for stat calculation
             $query->with([

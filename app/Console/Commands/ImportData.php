@@ -81,6 +81,13 @@ class ImportData extends Command
                 Prediction::reguard();
             }
 
+            // Attach Users to Tournaments
+            $this->info('Attaching Users to Tournaments...');
+            $allUserIds = User::pluck('id');
+            foreach (Tournament::all() as $tournament) {
+                $tournament->users()->syncWithoutDetaching($allUserIds);
+            }
+
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         });
 
