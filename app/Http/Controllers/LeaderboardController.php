@@ -37,10 +37,9 @@ class LeaderboardController extends Controller
             $query->with([
                 'predictions' => function ($q) use ($currentTournament) {
                     $q->whereHas('match', function ($m) use ($currentTournament) {
-                        $m->where('status', 'completed')
-                            ->whereHas('gameweek', function ($g) use ($currentTournament) {
-                                $g->where('tournament_id', $currentTournament->id);
-                            });
+                        $m->whereHas('gameweek', function ($g) use ($currentTournament) {
+                            $g->where('tournament_id', $currentTournament->id);
+                        });
                     })->with('match');
                 }
             ]);
