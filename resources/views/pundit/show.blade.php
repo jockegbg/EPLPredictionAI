@@ -113,7 +113,7 @@
                                             </div>
                                             @if($m->status === 'completed')
                                                 <div class="mt-2 text-zinc-500 font-mono text-xs uppercase">
-                                                    Result: <span class="text-pl-green font-bold">{{ $m->home_score }} -
+                                                    Result: <span class="text-pl-purple font-bold">{{ $m->home_score }} -
                                                         {{ $m->away_score }}</span>
                                                 </div>
                                             @endif

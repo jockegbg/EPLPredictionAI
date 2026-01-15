@@ -120,27 +120,36 @@
                     <a href="{{ route('pundit.show', $upcomingGameweek) }}" class="block group">
                         <div
                             class="bg-gradient-to-r from-zinc-900 to-black border border-white/10 rounded-2xl p-8 relative overflow-hidden hover:border-pl-pink/50 transition duration-300">
-                            <!-- Decorative BG -->
-                            <div class="absolute right-0 top-0 w-64 h-64 bg-pl-pink/10 blur-[100px] rounded-full"></div>
+
+                            <!-- Background Image if available -->
+                            @if($upcomingGameweek->image_path)
+                                <div class="absolute inset-0 z-0">
+                                    <img src="{{ Str::startsWith($upcomingGameweek->image_path, 'http') ? $upcomingGameweek->image_path : asset('storage/' . $upcomingGameweek->image_path) }}"
+                                        alt="Gameweek Art" class="w-full h-full object-cover opacity-40 mix-blend-overlay">
+                                    <div class="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
+                                </div>
+                            @else
+                                <!-- Decorative BG Fallback -->
+                                <div class="absolute right-0 top-0 w-64 h-64 bg-pl-pink/10 blur-[100px] rounded-full"></div>
+                            @endif
 
                             <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
                                 <div class="text-center md:text-left">
                                     <span
-                                        class="bg-pl-green text-black text-xs font-black uppercase tracking-widest px-2 py-1 rounded mb-3 inline-block">
+                                        class="bg-pl-green text-black text-xs font-black uppercase tracking-widest px-2 py-1 rounded-sm mb-3 inline-block">
                                         Just Released
                                     </span>
                                     <h3 class="text-3xl font-serif font-black text-white mb-2 leading-tight">
-                                        Gameweek {{ str_replace('Gameweek ', '', $upcomingGameweek->name) }} Preview
+                                        {{ $upcomingGameweek->pundit_summary['headline'] ?? "Gameweek " . $upcomingGameweek->name . " Preview" }}
                                     </h3>
-                                    <p class="text-gray-400 max-w-xl">
-                                        The AI Pundit has analyzed every tactic, tweet, and tea leaf. Read the full
-                                        breakdown of all {{ $upcomingMatches->count() }} matches.
+                                    <p class="text-gray-300 max-w-xl font-medium drop-shadow-md">
+                                        {{ $upcomingGameweek->pundit_summary['subheadline'] ?? "The AI Pundit has analyzed every tactic, tweet, and tea leaf. Read the full breakdown of all " . $upcomingMatches->count() . " matches." }}
                                     </p>
                                 </div>
 
                                 <div class="flex-shrink-0">
                                     <span
-                                        class="inline-flex items-center gap-2 bg-white text-pl-purple font-bold px-6 py-3 rounded-full hover:bg-pl-green hover:text-black transition transform group-hover:scale-105">
+                                        class="inline-flex items-center gap-2 bg-white text-pl-purple font-bold px-6 py-3 rounded-full hover:bg-pl-green hover:text-black transition transform group-hover:scale-105 shadow-lg">
                                         Read Article <span class="text-xl">→</span>
                                     </span>
                                 </div>

@@ -21,6 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Admin Routes
+    // Admin Routes
     Route::resource('admin/gameweeks', GameweekController::class)->names('admin.gameweeks');
     Route::resource('admin/tournaments', TournamentController::class)->names('admin.tournaments');
     Route::post('admin/tournaments/{tournament}/sync-users', [TournamentController::class, 'syncAllUsers'])->name('admin.tournaments.sync-users');
@@ -29,6 +30,12 @@ Route::middleware('auth')->group(function () {
     Route::post('admin/gameweeks/adjust-points', [GameweekController::class, 'adjustPoints'])->name('admin.gameweeks.adjust-points');
     Route::post('admin/gameweeks/{gameweek}/recalculate', [GameweekController::class, 'recalculateScores'])->name('admin.gameweeks.recalculate');
     Route::post('admin/gameweeks/{gameweek}/generate-punditry', [GameweekController::class, 'generatePunditry'])->name('admin.gameweeks.generate-punditry');
+
+    // Admin Pundit Management
+    Route::get('admin/pundit', [\App\Http\Controllers\Admin\AdminPunditController::class, 'index'])->name('admin.pundit.index');
+    Route::post('admin/pundit/{gameweek}/regenerate-image', [\App\Http\Controllers\Admin\AdminPunditController::class, 'regenerateImage'])->name('admin.pundit.regenerate-image');
+    Route::post('admin/pundit/{gameweek}/regenerate-summary', [\App\Http\Controllers\Admin\AdminPunditController::class, 'regenerateSummary'])->name('admin.pundit.regenerate-summary');
+    Route::post('admin/pundit/{gameweek}/regenerate-commentary', [\App\Http\Controllers\Admin\AdminPunditController::class, 'regenerateCommentary'])->name('admin.pundit.regenerate-commentary');
 
     // User Management
     Route::resource('admin/users', \App\Http\Controllers\Admin\UserController::class)->names('admin.users');

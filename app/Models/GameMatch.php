@@ -37,13 +37,25 @@ class GameMatch extends Model
     public function getHomeTeamLogoAttribute()
     {
         $slug = \Illuminate\Support\Str::slug($this->home_team);
-        return asset("images/teams/{$slug}.png");
+        $path = "images/teams/{$slug}.png";
+
+        if (file_exists(public_path($path))) {
+            return asset($path);
+        }
+
+        return asset("images/teams/default_badge.svg");
     }
 
     public function getAwayTeamLogoAttribute()
     {
         $slug = \Illuminate\Support\Str::slug($this->away_team);
-        return asset("images/teams/{$slug}.png");
+        $path = "images/teams/{$slug}.png";
+
+        if (file_exists(public_path($path))) {
+            return asset($path);
+        }
+
+        return asset("images/teams/default_badge.svg");
     }
 
     public function predictions(): HasMany
