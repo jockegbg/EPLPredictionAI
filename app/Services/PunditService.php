@@ -210,13 +210,15 @@ class PunditService
 
         if ($imageUrl) {
             try {
-                // Upload to Cloudinary
-                $uploadedFile = cloudinary()->upload($imageUrl, [
+                // Upload to Cloudinary using direct SDK to avoid config issues
+                $cloudinary = new \Cloudinary\Cloudinary(env('CLOUDINARY_URL'));
+
+                $result = $cloudinary->uploadApi()->upload($imageUrl, [
                     'folder' => 'gameweeks',
                     'public_id' => "gameweek_{$gameweek->id}_" . time(),
-                ])->getSecurePath();
+                ]);
 
-                return $uploadedFile;
+                return $result['secure_url'] ?? null;
             } catch (\Exception $e) {
                 Log::error("Failed to upload AI image to Cloudinary: " . $e->getMessage());
             }
