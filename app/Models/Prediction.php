@@ -17,6 +17,16 @@ class Prediction extends Model
         'predicted_away',
         'points_awarded',
         'is_double_points',
+        'points_adjustment', // Sidebets
+        'is_defence_chip',
+        'cashed_out_at',
+        'cashout_points',
+    ];
+
+    protected $casts = [
+        'is_double_points' => 'boolean',
+        'is_defence_chip' => 'boolean',
+        'cashed_out_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

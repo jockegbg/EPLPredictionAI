@@ -53,7 +53,7 @@
                             <a href="{{ route('admin.gameweeks.index') }}"
                                 class="text-gray-400 hover:text-white mr-4">Cancel</a>
                             <x-primary-button
-                                class="bg-white text-black font-black uppercase tracking-wider hover:bg-pl-green hover:text-pl-purple transition-all duration-300 transform hover:scale-105 shadow-[0_0_10px_rgba(255,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,135,0.5)] border-0">
+                                class="bg-white !text-black font-black uppercase tracking-wider hover:bg-pl-green hover:text-pl-purple transition-all duration-300 transform hover:scale-105 shadow-[0_0_10px_rgba(255,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,135,0.5)] border-0">
                                 {{ __('Fetch & Import') }}
                             </x-primary-button>
                         </div>

@@ -73,9 +73,10 @@
                             </div>
                         </div>
                         <div class="bg-black/20 rounded-xl p-4 flex-1 text-center border border-white/5">
-                            <div class="text-xs text-gray-400 uppercase font-bold tracking-wider">Predictions</div>
+                            <div class="text-xs text-gray-400 uppercase font-bold tracking-wider">Leaderboard position
+                            </div>
                             <div class="text-2xl font-black text-white mt-1">
-                                {{ Auth::user()->predictions()->count() }}
+                                #{{ $rank }}
                             </div>
                         </div>
                     </div>

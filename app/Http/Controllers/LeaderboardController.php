@@ -32,10 +32,42 @@ class LeaderboardController extends Controller
             $query->whereHas('tournaments', function ($q) use ($currentTournament) {
                 $q->where('tournaments.id', $currentTournament->id);
             });
+
+            // Eager load predictions for stat calculation
+            $query->with([
+                'predictions' => function ($q) use ($currentTournament) {
+                    $q->whereHas('match', function ($m) use ($currentTournament) {
+                        $m->where('status', 'completed')
+                            ->whereHas('gameweek', function ($g) use ($currentTournament) {
+                                $g->where('tournament_id', $currentTournament->id);
+                            });
+                    })->with('match');
+                }
+            ]);
         }
 
         $users = $query->orderByDesc('predictions_sum_points_awarded')
             ->paginate(20);
+
+        // Calculate Hit Rates
+        $users->getCollection()->each(function ($user) {
+            $played = $user->predictions->count();
+            $hits = $user->predictions->filter(function ($p) {
+                $m = $p->match;
+                if (!$m)
+                    return false; // Should not happen given whereHas
+
+                $predDiff = $p->predicted_home - $p->predicted_away;
+                $actualDiff = $m->home_score - $m->away_score;
+
+                // Compare signs: -1 (Away), 0 (Draw), 1 (Home)
+                return ($predDiff <=> 0) === ($actualDiff <=> 0);
+            })->count();
+
+            $user->predictions_played = $played;
+            $user->predictions_hit = $hits;
+            $user->hit_rate = $played > 0 ? round(($hits / $played) * 100) : 0;
+        });
 
         // Fetch Gameweeks for the matrix
         if ($currentTournament) {
@@ -47,7 +79,56 @@ class LeaderboardController extends Controller
             $gameweeks = collect();
         }
 
-        return view('leaderboard.index', compact('users', 'tournaments', 'currentTournament', 'gameweeks'));
+        // Calculate Gameweek Wins and High Scores
+        $gameweekWins = []; // [userId => count]
+        $roundWinners = []; // [gwId => ['score' => int, 'users' => [id, id]]]
+
+        if ($currentTournament) {
+            foreach ($gameweeks as $gw) {
+                // Determine scores for this GW for ALL users
+                $gwUserPoints = [];
+
+                // Assuming 'completed' status is the source of truth for "Winning" a round.
+                if ($gw->status !== 'completed')
+                    continue;
+
+                foreach ($gw->matches as $match) {
+                    foreach ($match->predictions as $pred) {
+                        if (!isset($gwUserPoints[$pred->user_id])) {
+                            $gwUserPoints[$pred->user_id] = 0;
+                        }
+                        $gwUserPoints[$pred->user_id] += $pred->points_awarded;
+                    }
+                }
+
+                if (empty($gwUserPoints))
+                    continue;
+
+                $maxPoints = max($gwUserPoints);
+
+                // Track round info
+                $roundWinners[$gw->id] = [
+                    'score' => $maxPoints,
+                    'users' => []
+                ];
+
+                // Only award/track if there are points > 0
+                if ($maxPoints > 0) {
+                    foreach ($gwUserPoints as $uId => $pts) {
+                        if ($pts === $maxPoints) {
+                            if (!isset($gameweekWins[$uId])) {
+                                $gameweekWins[$uId] = 0;
+                            }
+                            $gameweekWins[$uId]++;
+
+                            $roundWinners[$gw->id]['users'][] = $uId;
+                        }
+                    }
+                }
+            }
+        }
+
+        return view('leaderboard.index', compact('users', 'tournaments', 'currentTournament', 'gameweeks', 'gameweekWins', 'roundWinners'));
     }
 
     public function showRound(\App\Models\Gameweek $gameweek): View

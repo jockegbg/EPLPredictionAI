@@ -16,6 +16,8 @@ class Gameweek extends Model
         'end_date',
         'status',
         'tournament_id',
+        'is_custom',
+        'image_path',
     ];
 
     protected $casts = [

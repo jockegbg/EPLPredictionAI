@@ -130,19 +130,29 @@ class ImportController extends Controller
             $awayTeam = $map[$awayId] ?? "Unknown ({$awayId})";
 
             // Create Match
-            GameMatch::updateOrCreate(
-                [
+            // Find existing match or create new one
+            $match = GameMatch::where('gameweek_id', $gameweek->id)
+                ->where('home_team', $homeTeam)
+                ->where('away_team', $awayTeam)
+                ->first();
+
+            if (!$match) {
+                // Create new match - INITIALIZE WITH NULL SCORES irrespective of FPL status
+                GameMatch::create([
                     'gameweek_id' => $gameweek->id,
                     'home_team' => $homeTeam,
                     'away_team' => $awayTeam,
-                ],
-                [
                     'start_time' => $kickoff,
-                    'status' => $fix['finished'] ? 'completed' : 'upcoming',
-                    'home_score' => $fix['finished'] ? $fix['team_h_score'] : null,
-                    'away_score' => $fix['finished'] ? $fix['team_a_score'] : null,
-                ]
-            );
+                    'status' => 'upcoming', // Force upcoming so cron can pick it up and transition it
+                    'home_score' => null,
+                    'away_score' => null,
+                ]);
+            } else {
+                // Update existing match - ONLY update start time, don't touch scores
+                $match->update([
+                    'start_time' => $kickoff,
+                ]);
+            }
             $count++;
         }
 

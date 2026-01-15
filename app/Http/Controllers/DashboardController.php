@@ -10,10 +10,37 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(\App\Services\PunditService $punditService): View
     {
         $user = Auth::user();
-        $banter = $this->generateBanter($user);
+        $currentTournament = \App\Models\Tournament::where('is_active', true)->first();
+        $rank = '-';
+        $users = collect();
+
+        if ($currentTournament) {
+            // Fetch users sorted by points for this tournament
+            $users = User::withSum([
+                'predictions' => function ($query) use ($currentTournament) {
+                    $query->whereHas('match', function ($q) use ($currentTournament) {
+                        $q->whereHas('gameweek', function ($gw) use ($currentTournament) {
+                            $gw->where('tournament_id', $currentTournament->id);
+                        });
+                    });
+                }
+            ], 'points_awarded')
+                ->orderByDesc('predictions_sum_points_awarded')
+                ->get();
+
+            $index = $users->search(function ($u) use ($user) {
+                return $u->id === $user->id;
+            });
+
+            if ($index !== false) {
+                $rank = $index + 1;
+            }
+        }
+
+        $banter = $this->generateBanter($user, $users, $rank);
 
         // Fetch Upcoming/Current Gameweek
         $upcomingGameweek = \App\Models\Gameweek::where('end_date', '>=', now())
@@ -24,54 +51,24 @@ class DashboardController extends Controller
         if ($upcomingGameweek) {
             $upcomingMatches = $upcomingGameweek->matches()
                 ->orderBy('start_time')
-                ->get()
-                ->map(function ($match) {
-                    $match->ai_commentary = $this->generateMatchCommentary($match);
-                    return $match;
-                });
+                ->get();
         }
 
-        return view('dashboard', compact('banter', 'upcomingMatches', 'upcomingGameweek'));
+        return view('dashboard', compact('banter', 'upcomingMatches', 'upcomingGameweek', 'rank'));
     }
 
-    private function generateBanter(User $currentUser): string
+    private function generateBanter(User $currentUser, $users, $rank): string
     {
-        // 1. Get Current Tournament & Standings
-        $currentTournament = \App\Models\Tournament::where('is_active', true)->first();
-
-        if (!$currentTournament) {
-            return "Tournament hasn't started yet. Everyone's a winner! (For now...)";
-        }
-
-        // Fetch users sorted by points for this tournament
-        $users = User::withSum([
-            'predictions' => function ($query) use ($currentTournament) {
-                $query->whereHas('match', function ($q) use ($currentTournament) {
-                    $q->whereHas('gameweek', function ($gw) use ($currentTournament) {
-                        $gw->where('tournament_id', $currentTournament->id);
-                    });
-                });
-            }
-        ], 'points_awarded')
-            ->orderByDesc('predictions_sum_points_awarded')
-            ->get();
-
         if ($users->isEmpty()) {
-            return "It's quiet... too quiet. Get your predictions in!";
+            return "Tournament hasn't started yet. Everyone's a winner! (For now...)";
         }
 
         // 2. Identify Key Players
         $leader = $users->first();
         $lastPlace = $users->last();
-        $userRank = $users->search(function ($u) use ($currentUser) {
-            return $u->id === $currentUser->id;
-        }); // 0-indexed
 
         $userPoints = $currentUser->predictions_sum_points_awarded ?? 0;
         $leaderPoints = $leader->predictions_sum_points_awarded ?? 0;
-
-        // 3. Generate "Roast" based on context
-        $rankDisplay = $userRank + 1;
 
         // SCENARIO: User is 1st
         if ($currentUser->id === $leader->id) {
@@ -97,7 +94,7 @@ class DashboardController extends Controller
         }
 
         // SCENARIO: Podium (2nd or 3rd)
-        if ($userRank > 0 && $userRank <= 2) {
+        if ($rank > 1 && $rank <= 3) {
             $templates = [
                 "So close to the top! {$gap} points behind the leader. Need a ladder? 🪜",
                 "Podium spot! You're in the Champions League places. Don't bottle it now.",
@@ -107,7 +104,7 @@ class DashboardController extends Controller
         }
 
         // SCENARIO: Top 10 (Upper Mid-table)
-        if ($userRank <= 9) {
+        if ($rank <= 10) {
             $templates = [
                 "Top 10! Respectable. But 'respectable' doesn't win trophies. 🤷‍♂️",
                 "You're in the mix. a decent gameweek could change everything.",
@@ -117,7 +114,7 @@ class DashboardController extends Controller
         }
 
         // SCENARIO: Relegation Battle (Bottom 3 but not last)
-        if ($userRank >= $users->count() - 3) {
+        if ($rank >= $users->count() - 3) {
             $templates = [
                 "Relegation battle? Seriously? Pull your socks up! 🧦",
                 "It's getting hot down here. The Championship is calling your name.",
@@ -128,33 +125,14 @@ class DashboardController extends Controller
 
         // SCENARIO: Generic Mid-table
         $templates = [
-            "Sitting at #{$rankDisplay}. {$leader->name} is {$gap} points ahead. Time to lock in? 🤔",
-            "You're rank #{$rankDisplay}. Not great, not terrible. Just... existing.",
+            "Sitting at #{$rank}. {$leader->name} is {$gap} points ahead. Time to lock in? 🤔",
+            "You're rank #{$rank}. Not great, not terrible. Just... existing.",
             "{$leader->name} is running away with it (Rank 1). You going to let that happen?",
-            "Rank #{$rankDisplay}? My grandma predicts better than this. Step it up! 👵",
+            "Rank #{$rank}? My grandma predicts better than this. Step it up! 👵",
         ];
 
         return $templates[array_rand($templates)];
     }
 
-    private function generateMatchCommentary(\App\Models\GameMatch $match): string
-    {
-        $home = $match->home_team;
-        $away = $match->away_team;
 
-        $templates = [
-            "{$home} vs {$away}? I predict 22 people running around and one very angry manager.",
-            "If {$home} loses this, the fans might riot. If {$away} wins, it's a miracle.",
-            "{$home} playing at home... fortress or bouncy castle? We shall see.",
-            "Calling it now: {$away} to score a screamer in the 90th minute. Or lose 4-0. No in-between.",
-            "Is it too late to cancel this match? asking for a friend (and {$home}'s defense).",
-            "This has 0-0 written all over it. Don't say I didn't warn you.",
-            "{$home} vs {$away}. The battle of... well, two football teams.",
-            "My algorithm says {$home} wins. My heart says chaos. Let's go with chaos.",
-            "{$home}: great attack. {$away}: great bus parking. Unstoppable force vs immovable object.",
-            "The scriptwriters are cooking with this one. {$home} win, but with VAR drama.",
-        ];
-
-        return $templates[array_rand($templates)];
-    }
 }

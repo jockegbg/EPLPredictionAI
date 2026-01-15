@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\GameMatch;
+use Illuminate\Support\Facades\Log;
 
 class PunditService
 {
@@ -15,60 +16,213 @@ class PunditService
 
     public function generateExtendedCommentary(GameMatch $match): array
     {
+        // Wrapper for single match generation using the batch logic essentially (or keep legacy if needed)
         $home = $match->home_team;
         $away = $match->away_team;
         $date = $match->start_time->format('l F jS');
         $time = $match->start_time->format('H:i');
 
-        // Try Generative AI First
-        $prompt = "Act as a witty, slightly cynical British football pundit (like Roy Keane meets a stand-up comedian). 
-        Write a short 3-part match preview for the Premier League game between {$home} and {$away} at {$time} on {$date}.
+        $preds = [];
+        foreach ($match->predictions as $p) {
+            $user = $p->user->name ?? 'Unknown';
+            $preds[] = "{$user} predicted {$p->predicted_home}-{$p->predicted_away}" . ($p->is_double_points ? " (Double Chip!)" : "");
+        }
+        $predictionContext = implode(", ", $preds);
+
+        if ($match->status === 'completed') {
+            $score = "{$match->home_score}-{$match->away_score}";
+            $prompt = "Act as a ruthless, funny British football pundit writing for a high-end newspaper.
+            The match {$home} vs {$away} FINISHED {$score}.
+            Users' predictions: [{$predictionContext}].
+            
+            Write a 3-part review (Max 400 chars each) plus metadata:
+            1. 'article_title': A clever, pun-filled headline for this match review.
+            2. 'article_snippet': A short 1-sentence teaser.
+            3. 'context': React to the {$score}.
+            4. 'analysis': ROAST specific users who got it wrong. Short and punchy.
+            5. 'prediction': Witty summary closing statement.
+            6. 'score_prediction': Your predicted score (format: 'H-A', e.g. '2-1'). Since it's finished, claim you knew it all along.
+            
+            Return ONLY valid JSON: {\"article_title\": \"...\", \"article_snippet\": \"...\", \"context\": \"...\", \"analysis\": \"...\", \"prediction\": \"...\", \"score_prediction\": \"...\"}";
+        } else {
+            $prompt = "Act as a witty, cynical British football pundit writing for a high-end newspaper.
+            Preview {$home} vs {$away} ({$date}, {$time}).
+            Users' predictions: [{$predictionContext}].
+
+            Write a 3-part preview (Max 400 chars each) plus metadata:
+            1. 'article_title': A clever, pun-filled headline for this match preview.
+            2. 'article_snippet': A short 1-sentence teaser.
+            3. 'context': Set the scene concisely.
+            4. 'analysis': Mock specific users' predictions.
+            5. 'prediction': Your expert summary.
+            6. 'score_prediction': Your predicted score (format: 'H-A', e.g. '2-1').
+            
+            Return ONLY valid JSON: {\"article_title\": \"...\", \"article_snippet\": \"...\", \"context\": \"...\", \"analysis\": \"...\", \"prediction\": \"...\", \"score_prediction\": \"...\"}";
+        }
+
+        $aiResponse = $this->aiService->generateText($prompt);
+
+        if ($aiResponse) {
+            $cleanJson = preg_replace('/^```json\s*|\s*```$/', '', trim($aiResponse));
+            $decoded = json_decode($cleanJson, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && isset($decoded['context'])) {
+                return $decoded;
+            }
+        }
+
+        return $this->getFallback($match);
+    }
+
+    public function generateBatchCommentary($matches): array
+    {
+        $allResults = [];
+        // Sequential processing to respect Free Tier Limits
+        $chunks = $matches->chunk(1);
+
+        foreach ($chunks as $chunk) {
+            $promptParts = [];
+            foreach ($chunk as $match) {
+                $home = $match->home_team;
+                $away = $match->away_team;
+                $date = $match->start_time->format('l F jS H:i');
+
+                $preds = [];
+                if ($match->predictions) {
+                    foreach ($match->predictions as $p) {
+                        $user = $p->user->name ?? 'Unknown';
+                        $preds[] = "{$user}: {$p->predicted_home}-{$p->predicted_away}";
+                    }
+                }
+                $predictionContext = implode(", ", $preds);
+
+                if ($match->status === 'completed') {
+                    $score = "{$match->home_score}-{$match->away_score}";
+                    $promptParts[] = "MATCH_ID_{$match->id}: {$home} vs {$away} (FINISHED {$score}). [{$predictionContext}]";
+                } else {
+                    $promptParts[] = "MATCH_ID_{$match->id}: {$home} vs {$away} (Preview: {$date}). [{$predictionContext}]";
+                }
+            }
+
+            $matchesText = implode("\n\n", $promptParts);
+
+            $prompt = "Act as a witty, ruthless British football pundit writing for a major newspaper.
+            Process these matches:
+            
+            {$matchesText}
+            
+            For EACH match, provide valid JSON with:
+            - article_title: Clever headline.
+            - article_snippet: Teaser text.
+            - context: Reaction/Scene setter.
+            - analysis: User roast.
+            - prediction: Summary.
+            - score_prediction: 'H-A' (e.g. '3-1').
+
+            Return JSON Object keyed by MATCH_ID (int):
+            { \"{$chunk->first()->id}\": { \"article_title\": \"..\", \"article_snippet\": \"..\", \"context\": \"..\", \"analysis\": \"..\", \"prediction\": \"..\", \"score_prediction\": \"..\" } }";
+
+            $aiResponse = $this->aiService->generateText($prompt);
+            $parsed = false;
+
+            if ($aiResponse) {
+                $cleanJson = preg_replace('/^```json\s*|\s*```$/', '', trim($aiResponse));
+                $decoded = json_decode($cleanJson, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $allResults = $allResults + $decoded;
+                    $parsed = true;
+                } else {
+                    Log::warning("Batch JSON Decode Error: " . json_last_error_msg());
+                }
+            }
+
+            // IF FAILED: Use Fallback so cache is populated anyway
+            if (!$parsed) {
+                foreach ($chunk as $m) {
+                    $allResults[$m->id] = $this->getFallback($m);
+                }
+                Log::warning("Used fallback for match ID: {$chunk->first()->id}");
+            }
+
+            // Limit Pause (5 seconds - optimized for paid tier/efficiency)
+            if ($chunks->count() > 1) {
+                sleep(2);
+            }
+        }
+
+        return $allResults;
+    }
+
+    public function generateGameweekSummary(\App\Models\Gameweek $gameweek): array
+    {
+        $prompt = "Act as the Chief Football Writer for 'Bantersliga Daily'.
+        Write a Front Page Headline and Intro for Gameweek: {$gameweek->name}.
         
-        Return ONLY valid JSON in this exact format:
+        Context:
+        - Start Date: {$gameweek->start_date->format('F jS')}
+        - Key Matches: " . $gameweek->matches->take(3)->map(fn($m) => "{$m->home_team} vs {$m->away_team}")->implode(', ') . ".
+        
+        Return ONLY valid JSON:
         {
-            \"context\": \"One sentence setting the scene.\",
-            \"analysis\": \"Two sentences on form/tactics (humorous).\",
-            \"prediction\": \"One sentence prediction with a specific score.\"
+            \"headline\": \"A dramatic, clickbait-worthy main headline (Max 6 words)\",
+            \"subheadline\": \"A punchy, witty subheading describing the upcoming chaos (Max 2 sentences)\"
         }";
 
         $aiResponse = $this->aiService->generateText($prompt);
 
         if ($aiResponse) {
-            // Clean up Markdown code blocks if present (Gemini often wraps JSON in ```json ... ```)
             $cleanJson = preg_replace('/^```json\s*|\s*```$/', '', trim($aiResponse));
             $decoded = json_decode($cleanJson, true);
-
-            if (json_last_error() === JSON_ERROR_NONE && isset($decoded['context'], $decoded['analysis'], $decoded['prediction'])) {
+            if (json_last_error() === JSON_ERROR_NONE && isset($decoded['headline'])) {
                 return $decoded;
             }
         }
 
-        // FALLBACK: Static Templates
-        // 1. Context / Setup
-        $contexts = [
-            "We head to {$home} for what promises to be a defining moment in the season. The fans are expectant, the managers are nervous, and the neutrals are just hoping for goals.",
-            "This clash between {$home} and {$away} has all the ingredients of a classic. History suggests fireworks, but recent form suggests a cagey affair.",
-            "{$home} welcome {$away} in a fixture that usually delivers drama. Both sides need points for very different reasons.",
-        ];
-
-        // 2. Tactical / Form Analysis
-        $analysis = [
-            "Looking at the tactical matchup, {$home} will try to dominate possession, but {$away}'s counter-attacking threat is real. It's going to come down to who blinks first.",
-            "{$away} have been leaking goals lately, and {$home}'s attack is starting to click. If the visitors don't park the bus, this could get ugly quickly.",
-            "It's an unstoppable force vs an immovable object. {$home} have been solid at the back, while {$away} are struggling to find the net. One goal might decide it.",
-        ];
-
-        // 3. Prediction / "Hot Take"
-        $predictions = [
-            "My algorithm predicts a 2-1 win for {$home}, but don't be surprised if VAR ruins the party. It usually does.",
-            "I'm going for a shock {$away} victory. Sometimes logic goes out the window, and this feels like one of those days.",
-            "A boring 0-0 draw written in the stars. Both teams will be too scared to lose. Avoid at all costs unless you need a nap.",
-        ];
-
         return [
-            'context' => $contexts[array_rand($contexts)],
-            'analysis' => $analysis[array_rand($analysis)],
-            'prediction' => $predictions[array_rand($predictions)],
+            'headline' => "Gameweek {$gameweek->name} Preview",
+            'subheadline' => "The football continues. Will your predictions hold up, or will you crumble under pressure?"
         ];
+    }
+
+    public function getFallback(GameMatch $match): array
+    {
+        return [
+            'article_title' => "{$match->home_team} vs {$match->away_team}",
+            'article_snippet' => "A clash of titans (or mediocrity).",
+            'context' => "{$match->home_team} vs {$match->away_team}. Always a classic.",
+            'analysis' => "The pundit is currently locked out of the studio. Try again later!",
+            'prediction' => "Unclear.",
+            'score_prediction' => "1-1"
+        ];
+    }
+
+    public function generateGameweekImage(\App\Models\Gameweek $gameweek): ?string
+    {
+        $prompt = "Editorial newspaper cartoon illustration of an English football pundit, hand-drawn ink line art, bold sarcastic expression, slightly exaggerated facial features, black and white, rough sketch style, minimal shading, British sports newspaper aesthetic, confident and cynical mood, no colour or one muted accent, expressive eyebrows, clean white background.
+        
+        Context for specific drawing content:
+        Gameweek {$gameweek->name}: {$gameweek->headline} - {$gameweek->subheadline}.
+        
+        Make it visually striking, witty, and chaotic.";
+
+        // Use 1792x1024 for wide aspect ratio (approx 1.75:1, closest to requested 1.91:1 supported by DALL-E)
+        $imageUrl = $this->aiService->generateImage($prompt, "1792x1024");
+
+        if ($imageUrl) {
+            try {
+                $contents = file_get_contents($imageUrl);
+                $filename = "gameweek_{$gameweek->id}_" . time() . ".png";
+                $path = "gameweeks/{$filename}";
+
+                // Store in public disk
+                \Illuminate\Support\Facades\Storage::disk('public')->put($path, $contents);
+
+                return $path;
+            } catch (\Exception $e) {
+                Log::error("Failed to download/save AI image: " . $e->getMessage());
+            }
+        }
+
+        return null;
     }
 }

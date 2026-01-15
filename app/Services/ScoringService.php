@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\GameMatch;
+use App\Models\Prediction;
 
 class ScoringService
 {
@@ -13,8 +14,22 @@ class ScoringService
             return;
         }
 
+        foreach ($match->predictions as $prediction) {
+            // SKIP IF CASHED OUT
+            if ($prediction->cashed_out_at) {
+                continue;
+            }
+
+            $points = $this->calculatePredictionScore($match, $prediction);
+            $prediction->update(['points_awarded' => $points]);
+        }
+    }
+
+    public function calculatePredictionScore(GameMatch $match, Prediction $prediction): int
+    {
         $homeScore = $match->home_score;
         $awayScore = $match->away_score;
+        $matchDiff = $homeScore - $awayScore;
 
         // Determine match outcome
         $matchResult = 'draw';
@@ -24,33 +39,56 @@ class ScoringService
             $matchResult = 'away_win';
         }
 
-        // Calculate points for all predictions
-        foreach ($match->predictions as $prediction) {
-            $points = 0;
+        // Get Tournament Settings
+        $tournament = $match->gameweek->tournament;
+        $settings = [
+            'exact' => $tournament->score_correct_score ?? 40,
+            'outcome' => $tournament->score_correct_outcome ?? 10,
+            'diff' => $tournament->score_goal_difference ?? 0,
+            'penalty' => $tournament->score_wrong_outcome_penalty ?? 0,
+        ];
 
-            // Determine prediction outcome
-            $predResult = 'draw';
-            if ($prediction->predicted_home > $prediction->predicted_away) {
-                $predResult = 'home_win';
-            } elseif ($prediction->predicted_away > $prediction->predicted_home) {
-                $predResult = 'away_win';
-            }
+        $points = 0;
+        $predHome = $prediction->predicted_home;
+        $predAway = $prediction->predicted_away;
+        $predDiff = $predHome - $predAway;
 
-            // Scoring Logic
-            if ($prediction->predicted_home == $homeScore && $prediction->predicted_away == $awayScore) {
-                // Exact score
-                $points = 40;
-            } elseif ($predResult === $matchResult) {
-                // Correct outcome (but not exact score)
-                $points = 10;
-            }
-
-            // Apply Double Chip multiplier
-            if ($prediction->is_double_points) {
-                $points *= 2;
-            }
-
-            $prediction->update(['points_awarded' => $points]);
+        // Determine prediction outcome
+        $predResult = 'draw';
+        if ($predHome > $predAway) {
+            $predResult = 'home_win';
+        } elseif ($predAway > $predHome) {
+            $predResult = 'away_win';
         }
+
+        // SCORING LOGIC HIERARCHY
+        if ($predHome == $homeScore && $predAway == $awayScore) {
+            // 1. Exact score
+            $points = $settings['exact'];
+        } elseif ($predResult === $matchResult && $predDiff === $matchDiff && $settings['diff'] > 0 && $matchResult !== 'draw') {
+            // 2. Correct Goal Difference (and Outcome) - EXCLUDING DRAWS
+            $points = $settings['diff'];
+        } elseif ($predResult === $matchResult) {
+            // 3. Correct Outcome
+            $points = $settings['outcome'];
+        } else {
+            // 4. WRONG Outcome -> Apply Penalty?
+            if ($settings['penalty'] > 0) {
+                // Check Defence Chip
+                if (!$prediction->is_defence_chip) {
+                    $points = -1 * abs($settings['penalty']);
+                }
+            }
+        }
+
+        // Apply Double Chip multiplier
+        if ($prediction->is_double_points) {
+            $points *= 2;
+        }
+
+        // Apply Sidebet Adjustment
+        $points += $prediction->points_adjustment;
+
+        return $points;
     }
 }

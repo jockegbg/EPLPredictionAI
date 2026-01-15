@@ -18,28 +18,38 @@
                             <!-- Home Team -->
                             <div>
                                 <x-input-label for="home_team" :value="__('Home Team')" />
-                                <select id="home_team" name="home_team"
-                                    class="block mt-1 w-full rounded-md shadow-sm border-gray-300 dark:border-gray-700 dark:bg-slate-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                                    required>
-                                    <option value="">Select Home Team</option>
-                                    @foreach($teams as $team)
-                                        <option value="{{ $team }}">{{ $team }}</option>
-                                    @endforeach
-                                </select>
+                                @if($gameweek->is_custom)
+                                    <x-text-input id="home_team" class="block mt-1 w-full" type="text" name="home_team"
+                                        placeholder="Enter Home Team Name" required />
+                                @else
+                                    <select id="home_team" name="home_team"
+                                        class="block mt-1 w-full rounded-md shadow-sm border-gray-300 dark:border-gray-700 dark:bg-slate-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                        required>
+                                        <option value="">Select Home Team</option>
+                                        @foreach($teams as $team)
+                                            <option value="{{ $team }}">{{ $team }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
                                 <x-input-error :messages="$errors->get('home_team')" class="mt-2" />
                             </div>
 
                             <!-- Away Team -->
                             <div>
                                 <x-input-label for="away_team" :value="__('Away Team')" />
-                                <select id="away_team" name="away_team"
-                                    class="block mt-1 w-full rounded-md shadow-sm border-gray-300 dark:border-gray-700 dark:bg-slate-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                                    required>
-                                    <option value="">Select Away Team</option>
-                                    @foreach($teams as $team)
-                                        <option value="{{ $team }}">{{ $team }}</option>
-                                    @endforeach
-                                </select>
+                                @if($gameweek->is_custom)
+                                    <x-text-input id="away_team" class="block mt-1 w-full" type="text" name="away_team"
+                                        placeholder="Enter Away Team Name" required />
+                                @else
+                                    <select id="away_team" name="away_team"
+                                        class="block mt-1 w-full rounded-md shadow-sm border-gray-300 dark:border-gray-700 dark:bg-slate-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                        required>
+                                        <option value="">Select Away Team</option>
+                                        @foreach($teams as $team)
+                                            <option value="{{ $team }}">{{ $team }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
                                 <x-input-error :messages="$errors->get('away_team')" class="mt-2" />
                             </div>
                         </div>
@@ -59,7 +69,7 @@
                             <a href="{{ route('admin.gameweeks.index') }}"
                                 class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-4">Cancel</a>
                             <x-primary-button
-                                class="bg-white text-black font-black uppercase tracking-wider hover:bg-pl-green hover:text-pl-purple transition-all duration-300 transform hover:scale-105 shadow-[0_0_10px_rgba(255,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,135,0.5)] border-0">
+                                class="bg-white !text-black font-black uppercase tracking-wider hover:bg-pl-green hover:text-pl-purple transition-all duration-300 transform hover:scale-105 shadow-[0_0_10px_rgba(255,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,135,0.5)] border-0">
                                 {{ __('Create Match') }}
                             </x-primary-button>
                         </div>

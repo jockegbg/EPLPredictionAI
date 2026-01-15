@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('admin/tournaments', TournamentController::class)->names('admin.tournaments');
     Route::get('admin/import', [App\Http\Controllers\Admin\ImportController::class, 'create'])->name('admin.import.create');
     Route::post('admin/import', [App\Http\Controllers\Admin\ImportController::class, 'store'])->name('admin.import.store');
+    Route::post('admin/gameweeks/adjust-points', [GameweekController::class, 'adjustPoints'])->name('admin.gameweeks.adjust-points');
 
     // Game Match Routes (Nested under Gameweeks for creation)
     Route::get('admin/gameweeks/{gameweek}/matches/create', [App\Http\Controllers\Admin\GameMatchController::class, 'create'])->name('admin.matches.create');
@@ -35,6 +36,9 @@ Route::middleware('auth')->group(function () {
     // Prediction Routes
     Route::get('/predictions', [PredictionController::class, 'index'])->name('predictions.index');
     Route::post('/predictions', [PredictionController::class, 'store'])->name('predictions.store');
+    Route::post('/predictions/{match}/cashout', [PredictionController::class, 'cashout'])->name('predictions.cashout');
+
+
 
 
     // Leaderboard
@@ -44,6 +48,7 @@ Route::middleware('auth')->group(function () {
     // Pundit's Corner
     Route::get('/pundit', [App\Http\Controllers\PunditController::class, 'index'])->name('pundit.index');
     Route::get('/pundit/{gameweek}', [App\Http\Controllers\PunditController::class, 'show'])->name('pundit.show');
+    Route::get('/pundit/match/{match}', [App\Http\Controllers\PunditController::class, 'matchCommentary'])->name('pundit.match');
 
     // Passkey Management
     Route::get('/passkeys/register-options', [App\Http\Controllers\PasskeyController::class, 'registerOptions'])->name('passkeys.register_options');
@@ -52,5 +57,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::passkeys();
+
+
 
 require __DIR__ . '/auth.php';

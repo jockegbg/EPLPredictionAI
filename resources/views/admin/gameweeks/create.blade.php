@@ -18,12 +18,22 @@
                         </div>
 
                         <div class="mb-4">
+                            <label for="is_custom" class="inline-flex items-center">
+                                <input id="is_custom" type="checkbox"
+                                    class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:focus:ring-indigo-600"
+                                    name="is_custom" value="1">
+                                <span
+                                    class="ms-2 text-sm text-gray-600 dark:text-gray-400">{{ __('Custom Round (Manual Teams)') }}</span>
+                            </label>
+                        </div>
+
+                        <div class="mb-4">
                             <x-input-label for="tournament_id" :value="__('Tournament')" />
                             <select id="tournament_id" name="tournament_id"
                                 class="block mt-1 w-full border-gray-300 dark:border-gray-700 dark:bg-slate-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
                                 required>
                                 @foreach($tournaments as $tournament)
-                                    <option value="{{ $tournament->id }}" {{ $tournament->is_active ? 'selected' : '' }}>
+                                    <option value="{{ $tournament->id }}" {{ (isset($selectedTournamentId) && $selectedTournamentId == $tournament->id) || (!isset($selectedTournamentId) && $tournament->is_active) ? 'selected' : '' }}>
                                         {{ $tournament->name }}
                                     </option>
                                 @endforeach
@@ -45,7 +55,7 @@
                             <a href="{{ route('admin.gameweeks.index') }}"
                                 class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-4">Cancel</a>
                             <x-primary-button
-                                class="bg-white text-black font-black uppercase tracking-wider hover:bg-pl-green hover:text-pl-purple transition-all duration-300 transform hover:scale-105 shadow-[0_0_10px_rgba(255,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,135,0.5)] border-0">
+                                class="bg-white !text-black font-black uppercase tracking-wider hover:bg-pl-green hover:text-pl-purple transition-all duration-300 transform hover:scale-105 shadow-[0_0_10px_rgba(255,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,135,0.5)] border-0">
                                 {{ __('Create Gameweek') }}
                             </x-primary-button>
                         </div>

@@ -41,6 +41,12 @@
                                         User</th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-bold text-pl-green uppercase tracking-wider">
+                                        GW Wins</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-bold text-pl-green uppercase tracking-wider">
+                                        Hit Rate</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-bold text-pl-green uppercase tracking-wider">
                                         Total Points</th>
                                 </tr>
                             </thead>
@@ -59,11 +65,29 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
-                                            {{ $user->name }}
-                                            @if($user->id === auth()->id())
-                                                <span
-                                                    class="ml-2 text-[10px] font-bold bg-pl-green text-pl-purple px-2 py-0.5 rounded-full uppercase tracking-wide">You</span>
+                                            <div class="flex items-center gap-2">
+                                                @if($user->favorite_team_logo)
+                                                    <img src="{{ $user->favorite_team_logo }}" alt="{{ $user->favorite_team }}" class="w-6 h-6 object-contain" title="{{ $user->favorite_team }}">
+                                                @endif
+                                                {{ $user->name }}
+                                                @if($user->id === auth()->id())
+                                                    <span
+                                                        class="text-[10px] font-bold bg-pl-green text-pl-purple px-2 py-0.5 rounded-full uppercase tracking-wide">You</span>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-md font-bold text-pl-pink">
+                                            @if(isset($gameweekWins[$user->id]) && $gameweekWins[$user->id] > 0)
+                                                🏆 {{ $gameweekWins[$user->id] }}
+                                            @else
+                                                <span class="text-white/20">-</span>
                                             @endif
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <span class="text-lg font-bold text-white">{{ $user->hit_rate }}%</span>
+                                                <span class="text-xs text-white/40 font-mono">{{ $user->predictions_hit }}/{{ $user->predictions_played }}</span>
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-lg font-bold text-pl-blue">
                                             {{ $user->predictions_sum_points_awarded ?? 0 }}
@@ -117,10 +141,12 @@
                                             <!-- Round Name Column -->
                                             <td
                                                 class="px-6 py-4 whitespace-nowrap sticky left-0 bg-[#2f0034]/95 backdrop-blur-sm z-10 border-r border-white/5 group-hover:bg-[#2f0034]">
-                                                <div class="flex flex-col">
-                                                    <span class="font-bold text-white">{{ $gw->name }}</span>
+                                                <a href="{{ route('leaderboard.round', $gw) }}"
+                                                    class="flex flex-col hover:scale-105 transition-transform duration-200">
+                                                    <span
+                                                        class="font-bold text-pl-green hover:underline decoration-pl-green/50 underline-offset-4">{{ $gw->name }}</span>
                                                     <span class="text-xs text-white/50">{{ $gw->status }}</span>
-                                                </div>
+                                                </a>
                                             </td>
 
                                             <!-- User Columns -->
@@ -138,12 +164,20 @@
                                                         ->isNotEmpty();
                                                 @endphp
 
-                                                <td class="px-4 py-4 whitespace-nowrap text-center text-sm border-l border-white/5">
+                                                <td class="px-4 py-4 whitespace-nowrap text-center text-sm border-l border-white/5 {{ in_array($user->id, $roundWinners[$gw->id]['users'] ?? []) ? 'bg-pl-pink/10 shadow-inner' : '' }}">
                                                     @if($hasPredictions)
-                                                        <a href="{{ route('leaderboard.round', $gw) }}"
-                                                            class="inline-block px-3 py-1 rounded-full bg-white/10 hover:bg-pl-green hover:text-pl-purple transition font-bold text-white">
-                                                            {{ $gwPoints }}
-                                                        </a>
+                                                        @if(in_array($user->id, $roundWinners[$gw->id]['users'] ?? []) && $roundWinners[$gw->id]['score'] > 0)
+                                                            <div class="flex items-center justify-center gap-1">
+                                                                <span class="text-sm">🏆</span>
+                                                                <span class="inline-block px-3 py-1 rounded-full bg-pl-pink text-white font-bold shadow-[0_0_10px_rgba(255,40,130,0.5)]">
+                                                                    {{ $gwPoints }}
+                                                                </span>
+                                                            </div>
+                                                        @else
+                                                            <span class="inline-block px-3 py-1 rounded-full bg-white/10 font-bold text-white">
+                                                                {{ $gwPoints }}
+                                                            </span>
+                                                        @endif
                                                     @else
                                                         <span class="text-white/20">-</span>
                                                     @endif

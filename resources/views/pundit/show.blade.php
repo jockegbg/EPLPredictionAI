@@ -8,86 +8,131 @@
                 <span>←</span> Back to Articles
             </a>
 
-            <div class="bg-zinc-900 border border-zinc-800 shadow-2xl rounded-sm overflow-hidden relative">
-                <!-- Article Header / Newspaper Style -->
-                <div class="bg-zinc-100 p-8 md:p-12 text-center border-b-4 border-pl-pink relative overflow-hidden">
-                    <div
-                        class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pl-purple via-pl-pink to-pl-green">
-                    </div>
+            <!-- Main Container - Light Mode for Newspaper Feel -->
+            <div class="bg-[#fcfbf9] border border-zinc-200 shadow-2xl rounded-sm overflow-hidden relative">
 
+                <!-- Telegraph Style Header -->
+                <div class="text-center border-b-4 border-black pb-8 mb-8 pt-12 px-8">
+                    <!-- "The Pundit's Corner" -->
                     <div
-                        class="inline-block bg-black text-white text-xs font-black px-3 py-1 uppercase tracking-widest mb-4 transform -rotate-2">
+                        class="inline-block bg-black text-white text-xs font-bold px-3 py-1 uppercase tracking-widest mb-4 transform -rotate-1 shadow-[5px_5px_0px_0px_rgba(0,0,0,0.3)]">
                         The Pundit's Corner
                     </div>
 
-                    <h1 class="text-4xl md:text-6xl font-black text-black font-serif mb-6 leading-tight">
-                        Gameweek {{ str_replace('Gameweek ', '', $gameweek->name) }} Preview: <br />
-                        <span class="text-pl-purple italic">Chaos Incoming?</span>
+                    <h1 class="text-4xl md:text-6xl font-serif font-black mb-4 leading-tight text-zinc-900">
+                        {{ $summary['headline'] ?? "Gameweek {$gameweek->name}" }}
                     </h1>
 
-                    <div class="flex items-center justify-center gap-3 text-zinc-600 text-sm font-medium">
-                        <span class="flex items-center gap-1">
-                            <span class="bg-gray-200 rounded-full p-1">🤖</span> By <strong>The AI Pundit</strong>
-                        </span>
+                    <h2 class="text-xl md:text-2xl font-serif text-zinc-600 italic mb-6">
+                        {{ $summary['subheadline'] ?? 'Analysis of the upcoming fixtures.' }}
+                    </h2>
+
+                    <div
+                        class="flex items-center justify-center gap-4 text-sm font-bold uppercase tracking-wider text-zinc-400">
+                        <span>By The Pundit</span>
                         <span>•</span>
-                        <span>{{ now()->format('F j, Y') }}</span>
+                        <span>{{ $gameweek->start_date->format('F jS, Y') }}</span>
                         <span>•</span>
-                        <span>{{ $gameweek->matches->count() }} Matches</span>
+                        <span class="text-pl-pink">Humour</span>
                     </div>
                 </div>
 
-                <!-- Article Body -->
-                <div class="p-8 md:p-16 space-y-16 bg-[#1a1a1a]">
+                <!-- Gameweek Image (if available) -->
+                @if($gameweek && $gameweek->image_path)
+                    <figure class="mb-10 text-center px-4">
+                        <img src="{{ asset('storage/' . $gameweek->image_path) }}" alt="Gameweek Art"
+                            class="w-full max-w-3xl mx-auto h-auto rounded-sm shadow-xl border border-zinc-200">
+                        <figcaption class="mt-2 text-xs text-zinc-500 font-serif italic text-center">
+                            Fig 1. The expected chaos of the weekend.
+                        </figcaption>
+                    </figure>
+                @endif
 
-                    <p class="text-2xl text-gray-300 font-serif border-l-4 border-pl-green pl-6 italic leading-relaxed">
+                <!-- Main Body - Telegraph Style -->
+                <div class="prose prose-lg prose-zinc max-w-3xl mx-auto font-serif px-8 pb-16">
+
+
+
+                    <!-- Intro Text -->
+                    <p
+                        class="text-xl text-zinc-900 font-serif border-l-4 border-pl-green pl-6 italic leading-relaxed mb-12">
                         "Another weekend, another chance for glory or total embarrassment. Here's exactly what's going
                         to happen (probably)."
                     </p>
 
-                    <div class="space-y-16">
-                        @foreach($gameweek->matches as $match)
-                            <article class="relative pl-0 md:pl-8 border-t border-zinc-800 pt-12 first:border-0 first:pt-0">
-                                <!-- Match Headline -->
-                                <h2
-                                    class="text-3xl font-bold text-white mb-4 font-serif group flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
-                                    <span class="text-pl-pink">{{ $match->home_team }}</span>
-                                    <span
-                                        class="text-sm text-zinc-500 font-sans font-normal uppercase tracking-wider">vs</span>
-                                    <span class="text-pl-blue">{{ $match->away_team }}</span>
+                    <!-- Commentary Body -->
+                    <div class="space-y-12">
+                        @foreach($gameweek->matches as $m)
+                            <article class="relative pl-0 md:pl-8 border-t border-zinc-200 pt-12 first:border-0 first:pt-0">
+                                <!-- Heading -->
+                                <h2 class="text-2xl font-bold text-zinc-900 mb-2 font-serif flex items-center gap-3">
+                                    <span class="text-black">{{ $m->home_team }}</span>
+                                    <span class="text-zinc-400 text-sm font-sans font-normal uppercase">vs</span>
+                                    <span class="text-black">{{ $m->away_team }}</span>
                                 </h2>
 
-                                <div
-                                    class="flex items-center gap-4 mb-8 text-xs font-mono text-zinc-500 uppercase tracking-widest bg-black/20 inline-block px-3 py-1 rounded">
-                                    <span>📅 {{ $match->start_time->format('l, H:i') }}</span>
+                                <div class="text-xs font-mono text-zinc-500 uppercase tracking-widest mb-6">
+                                    📅 {{ $m->start_time->format('l, H:i') }}
                                 </div>
 
-                                <!-- The Commentary -->
-                                <div class="prose prose-invert prose-lg max-w-none space-y-6">
-                                    <p class="text-gray-300 leading-relaxed">
-                                        {{ $match->ai_commentary['context'] }}
-                                    </p>
-                                    <p class="text-gray-300 leading-relaxed">
-                                        {{ $match->ai_commentary['analysis'] }}
-                                    </p>
-                                    <div class="bg-white/5 border border-white/10 p-6 rounded-lg my-6">
-                                        <h5 class="text-pl-green text-sm font-bold uppercase tracking-widest mb-2">The
-                                            Verdict</h5>
-                                        <p class="text-white italic font-medium">
-                                            "{{ $match->ai_commentary['prediction'] }}"
+                                <!-- AI Text -->
+                                <div class="text-zinc-800 space-y-4 leading-relaxed">
+                                    <p>{{ $m->ai_commentary['context'] ?? '' }}</p>
+                                    <p>{{ $m->ai_commentary['analysis'] ?? '' }}</p>
+                                </div>
+
+                                <!-- Boxout -->
+                                <div
+                                    class="bg-zinc-100 border-l-4 border-pl-purple p-6 my-8 grid md:grid-cols-2 gap-6 shadow-sm">
+                                    <!-- Verdict -->
+                                    <div>
+                                        <h5
+                                            class="text-pl-purple text-sm font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            <span>🤖</span> The AI Verdict
+                                        </h5>
+                                        <p class="text-zinc-900 italic font-medium text-lg border-l-2 border-zinc-300 pl-4">
+                                            "{{ $m->ai_commentary['prediction'] ?? '' }}"
                                         </p>
+                                        <div class="mt-3 text-zinc-500 font-mono text-xs uppercase pl-4">
+                                            The AI Pundit predicts: <span
+                                                class="text-black font-bold">{{ $m->ai_commentary['score_prediction'] ?? 'N/A' }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- User Stats -->
+                                    <div class="border-t md:border-t-0 md:border-l border-zinc-200 pt-4 md:pt-0 md:pl-6">
+                                        <h5
+                                            class="text-zinc-700 text-sm font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            <span>👤</span> Your Prediction
+                                        </h5>
+                                        @if(isset($userPredictions[$m->id]))
+                                            @php $p = $userPredictions[$m->id]; @endphp
+                                            <div class="text-zinc-900 font-black text-3xl font-serif">
+                                                {{ $p->predicted_home }} - {{ $p->predicted_away }}
+                                            </div>
+                                            @if($m->status === 'completed')
+                                                <div class="mt-2 text-zinc-500 font-mono text-xs uppercase">
+                                                    Result: <span class="text-pl-green font-bold">{{ $m->home_score }} -
+                                                        {{ $m->away_score }}</span>
+                                                </div>
+                                            @endif
+                                        @else
+                                            <p class="text-zinc-400 italic text-sm">No prediction.</p>
+                                        @endif
                                     </div>
                                 </div>
                             </article>
                         @endforeach
                     </div>
 
-                    <!-- Signature -->
-                    <div class="mt-16 pt-8 border-t border-zinc-800 text-center">
-                        <p class="text-zinc-500 text-sm italic">
+                    <!-- Footer -->
+                    <div class="mt-16 pt-8 border-t border-zinc-200 text-center">
+                        <p class="text-zinc-400 text-sm italic">
                             The AI Pundit is a generative model trained on 10,000 hours of angry fan tweets and
                             questionable referee decisions.
                         </p>
                     </div>
+
                 </div>
             </div>
         </div>

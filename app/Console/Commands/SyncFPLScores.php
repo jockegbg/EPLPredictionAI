@@ -41,6 +41,7 @@ class SyncFPLScores extends Command
         // We look for gameweeks that are NOT completed.
         // potentially check date range to avoid checking gw 38 when we are in gw 1
         $gameweeks = Gameweek::where('status', '!=', 'completed')
+            ->where('is_custom', false) // Skip custom rounds
             ->whereDate('start_date', '<=', Carbon::now()->addDays(1)) // Look at started or about to start
             ->get();
 

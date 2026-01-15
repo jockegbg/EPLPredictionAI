@@ -37,13 +37,27 @@ class TournamentController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'is_active' => 'boolean',
-            'users' => 'array', // Array of user IDs
+            'users' => 'array',
             'users.*' => 'exists:users,id',
+            'score_correct_score' => 'required|integer',
+            'score_correct_outcome' => 'required|integer',
+            'score_goal_difference' => 'required|integer',
+            'score_wrong_outcome_penalty' => 'required|integer',
+            'is_cashout_enabled' => 'boolean',
+            'is_double_down_enabled' => 'boolean',
+            'is_defence_enabled' => 'boolean',
         ]);
 
         $tournament = Tournament::create([
             'name' => $validated['name'],
             'is_active' => $request->has('is_active'),
+            'score_correct_score' => $validated['score_correct_score'],
+            'score_correct_outcome' => $validated['score_correct_outcome'],
+            'score_goal_difference' => $validated['score_goal_difference'],
+            'score_wrong_outcome_penalty' => $validated['score_wrong_outcome_penalty'],
+            'is_cashout_enabled' => $request->has('is_cashout_enabled'),
+            'is_double_down_enabled' => $request->has('is_double_down_enabled'),
+            'is_defence_enabled' => $request->has('is_defence_enabled'),
         ]);
 
         if (isset($validated['users'])) {
@@ -75,11 +89,25 @@ class TournamentController extends Controller
             'is_active' => 'boolean',
             'users' => 'array',
             'users.*' => 'exists:users,id',
+            'score_correct_score' => 'required|integer',
+            'score_correct_outcome' => 'required|integer',
+            'score_goal_difference' => 'required|integer',
+            'score_wrong_outcome_penalty' => 'required|integer',
+            'is_cashout_enabled' => 'boolean',
+            'is_double_down_enabled' => 'boolean',
+            'is_defence_enabled' => 'boolean',
         ]);
 
         $tournament->update([
             'name' => $validated['name'],
             'is_active' => $request->has('is_active'),
+            'score_correct_score' => $validated['score_correct_score'],
+            'score_correct_outcome' => $validated['score_correct_outcome'],
+            'score_goal_difference' => $validated['score_goal_difference'],
+            'score_wrong_outcome_penalty' => $validated['score_wrong_outcome_penalty'],
+            'is_cashout_enabled' => $request->has('is_cashout_enabled'),
+            'is_double_down_enabled' => $request->has('is_double_down_enabled'),
+            'is_defence_enabled' => $request->has('is_defence_enabled'),
         ]);
 
         if (isset($validated['users'])) {
