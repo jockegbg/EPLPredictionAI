@@ -107,4 +107,17 @@ class GameweekController extends Controller
 
         return back()->with('success', 'Sidebet adjustment applied successfully.');
     }
+
+    public function recalculateScores(Gameweek $gameweek): RedirectResponse
+    {
+        $scoringService = app(\App\Services\ScoringService::class);
+        $count = 0;
+        foreach ($gameweek->matches as $match) {
+            if ($match->status === 'completed') {
+                $scoringService->calculatePoints($match);
+                $count++;
+            }
+        }
+        return back()->with('success', "Recalculated scores for {$count} completed matches.");
+    }
 }

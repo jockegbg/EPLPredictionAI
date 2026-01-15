@@ -37,6 +37,9 @@
                             :active="request()->routeIs('admin.gameweeks.*')">
                             {{ __('Manage Gameweeks') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                            {{ __('Users') }}
+                        </x-nav-link>
                     @endif
                 </div>
             </div>
@@ -111,10 +114,16 @@
             <x-responsive-nav-link :href="route('leaderboard.index')" :active="request()->routeIs('leaderboard.index')">
                 {{ __('Leaderboard') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('admin.gameweeks.index')"
-                :active="request()->routeIs('admin.gameweeks.*')">
-                {{ __('Gameweeks') }}
+            <x-responsive-nav-link :href="route('pundit.index')" :active="request()->routeIs('pundit.*')">
+                {{ __('Pundit\'s Corner') }}
             </x-responsive-nav-link>
+
+            @if(Auth::user()->is_admin)
+                <x-responsive-nav-link :href="route('admin.gameweeks.index')"
+                    :active="request()->routeIs('admin.gameweeks.*')">
+                    {{ __('Gameweeks') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

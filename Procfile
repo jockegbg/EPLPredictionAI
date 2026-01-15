@@ -1,1 +1,1 @@
-web: php artisan data:import && php artisan serve --host=0.0.0.0 --port=$PORT
+web: php artisan storage:link && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT

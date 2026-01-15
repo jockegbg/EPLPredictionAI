@@ -26,6 +26,12 @@ Route::middleware('auth')->group(function () {
     Route::get('admin/import', [App\Http\Controllers\Admin\ImportController::class, 'create'])->name('admin.import.create');
     Route::post('admin/import', [App\Http\Controllers\Admin\ImportController::class, 'store'])->name('admin.import.store');
     Route::post('admin/gameweeks/adjust-points', [GameweekController::class, 'adjustPoints'])->name('admin.gameweeks.adjust-points');
+    Route::post('admin/gameweeks/{gameweek}/recalculate', [GameweekController::class, 'recalculateScores'])->name('admin.gameweeks.recalculate');
+
+    // User Management
+    Route::resource('admin/users', \App\Http\Controllers\Admin\UserController::class)->names('admin.users');
+    Route::post('admin/users/{user}/reset-password', [\App\Http\Controllers\Admin\UserController::class, 'resetPassword'])->name('admin.users.reset-password');
+    Route::post('admin/users/{user}/remove-passkeys', [\App\Http\Controllers\Admin\UserController::class, 'removePasskeys'])->name('admin.users.remove-passkeys');
 
     // Game Match Routes (Nested under Gameweeks for creation)
     Route::get('admin/gameweeks/{gameweek}/matches/create', [App\Http\Controllers\Admin\GameMatchController::class, 'create'])->name('admin.matches.create');

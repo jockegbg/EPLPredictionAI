@@ -103,6 +103,11 @@
                                                             <a href="{{ route('admin.gameweeks.edit', $gw) }}" class="text-gray-400 hover:text-white transition">Edit</a>
                                                             <a href="{{ route('admin.matches.create', $gw) }}" class="text-pl-green hover:text-white transition">Add Match</a>
                                                             
+                                                            <form action="{{ route('admin.gameweeks.recalculate', $gw) }}" method="POST" onsubmit="return confirm('Recalculate points for all completed matches?');">
+                                                                @csrf
+                                                                <button type="submit" class="text-blue-400 hover:text-white transition" title="Recalculate Scores">⟳</button>
+                                                            </form>
+                                                            
                                                             <form id="delete-gameweek-{{ $gw->id }}" method="POST" action="{{ route('admin.gameweeks.destroy', $gw) }}" style="display: none;">
                                                                 @csrf
                                                                 @method('DELETE')

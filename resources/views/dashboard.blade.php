@@ -31,11 +31,42 @@
                         <div class="flex-1 w-full text-center md:text-left">
                             <h3 class="text-pl-green font-bold text-sm uppercase tracking-widest mb-1">The AI Pundit
                                 Says...</h3>
-                            <div
-                                class="bg-white/10 backdrop-blur-md rounded-tr-2xl rounded-br-2xl rounded-bl-2xl rounded-tl-sm p-5 border border-white/5 inline-block">
-                                <p class="text-white text-lg font-medium italic leading-relaxed">
-                                    "{{ $banter }}"
-                                </p>
+                            <div class="space-y-4">
+                                <!-- Greeting -->
+                                <div
+                                    class="bg-white/10 backdrop-blur-md rounded-tr-2xl rounded-br-2xl rounded-bl-2xl rounded-tl-sm p-5 border border-white/5">
+                                    <p class="text-white text-lg font-medium italic leading-relaxed">
+                                        "{{ $humor['greeting'] }}"
+                                    </p>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Team Roast -->
+                                    <div
+                                        class="bg-red-900/20 border border-red-500/20 rounded-xl p-4 relative overflow-hidden group">
+                                        <div
+                                            class="absolute -right-4 -top-4 w-16 h-16 bg-red-500/10 blur-xl rounded-full group-hover:bg-red-500/20 transition">
+                                        </div>
+                                        <h4
+                                            class="text-red-400 font-bold text-xs uppercase mb-2 flex items-center gap-2">
+                                            <span class="text-lg">🔥</span> On {{ Auth::user()->favorite_team }}
+                                        </h4>
+                                        <p class="text-gray-300 text-sm italic">"{{ $humor['team_roast'] }}"</p>
+                                    </div>
+
+                                    <!-- Prediction -->
+                                    <div
+                                        class="bg-pl-blue/10 border border-pl-blue/20 rounded-xl p-4 relative overflow-hidden group">
+                                        <div
+                                            class="absolute -right-4 -top-4 w-16 h-16 bg-pl-blue/10 blur-xl rounded-full group-hover:bg-pl-blue/20 transition">
+                                        </div>
+                                        <h4
+                                            class="text-pl-blue font-bold text-xs uppercase mb-2 flex items-center gap-2">
+                                            <span class="text-lg">🎱</span> Mystic Ball
+                                        </h4>
+                                        <p class="text-gray-300 text-sm italic">"{{ $humor['prediction'] }}"</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

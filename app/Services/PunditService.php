@@ -225,4 +225,38 @@ class PunditService
 
         return null;
     }
+    public function generateDashboardHumor(\App\Models\User $user, $contextData): array
+    {
+        $team = $user->favorite_team ?? 'Unknown Team';
+        $rank = $contextData['rank'];
+        $leader = $contextData['leader_name'];
+        $upcoming = $contextData['upcoming_match'];
+
+        $prompt = "Act as a ruthless, funny British football pundit. 
+        User: {$user->name}. Favorite Team: {$team}. Rank: {$rank}.
+        Leader: {$leader}. Next Match: {$upcoming}.
+
+        Write a 3-part JSON response (Max 2 sentences each):
+        1. 'greeting': A cheeky welcome message based on their rank.
+        2. 'team_roast': A specific nasty comment about {$team}'s current form or history.
+        3. 'prediction': A confident, unsolicited prediction about the next match {$upcoming}.
+
+        Return ONLY valid JSON: {\"greeting\": \"...\", \"team_roast\": \"...\", \"prediction\": \"...\"}";
+
+        $aiResponse = $this->aiService->generateText($prompt);
+
+        if ($aiResponse) {
+            $cleanJson = preg_replace('/^```json\s*|\s*```$/', '', trim($aiResponse));
+            $decoded = json_decode($cleanJson, true);
+            if (json_last_error() === JSON_ERROR_NONE && isset($decoded['greeting'])) {
+                return $decoded;
+            }
+        }
+
+        return [
+            'greeting' => "Welcome back, {$user->name}. Still stuck at rank {$rank}, I see?",
+            'team_roast' => "I'd roast {$team}, but their performance last week was joke enough.",
+            'prediction' => "Football will be played. You will probably predict it wrong."
+        ];
+    }
 }
