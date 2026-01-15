@@ -47,6 +47,15 @@ class GeneratePunditCommentary extends Command
                 ->where('start_date', '>=', now()->subDays(7)) // Look back 7 days to catch active one
                 ->orderBy('start_date', 'asc')
                 ->first();
+
+            // Fallback: If no "recent" gameweek (e.g. off-season or old data), grab the very latest one
+            if (!$gw) {
+                $this->warn("No active/recent gameweek found. Falling back to the latest gameweek in DB.");
+                $gw = Gameweek::with('matches.predictions.user')
+                    ->orderBy('start_date', 'desc')
+                    ->first();
+            }
+
             if ($gw)
                 $gameweeks->push($gw);
         }
