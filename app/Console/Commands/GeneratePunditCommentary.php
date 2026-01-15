@@ -73,7 +73,7 @@ class GeneratePunditCommentary extends Command
             $this->info("Generating Headline...");
             try {
                 $summary = $this->punditService->generateGameweekSummary($gameweek);
-                Cache::put("pundit_summary_{$gameweek->id}", $summary, 3600 * 24);
+                $gameweek->update(['pundit_summary' => $summary]);
             } catch (\Exception $e) {
                 $this->error("Summary failed: " . $e->getMessage());
             }
@@ -96,8 +96,7 @@ class GeneratePunditCommentary extends Command
             $matchesToGenerate = $gameweek->matches;
             if (!$force) {
                 $matchesToGenerate = $gameweek->matches->filter(function ($match) {
-                    $cacheKey = "match_commentary_{$match->id}_" . $match->updated_at->timestamp;
-                    return !Cache::has($cacheKey);
+                    return empty($match->ai_commentary);
                 });
             }
 
@@ -113,8 +112,7 @@ class GeneratePunditCommentary extends Command
             foreach ($results as $matchId => $data) {
                 $match = $gameweek->matches->firstWhere('id', $matchId);
                 if ($match) {
-                    $cacheKey = "match_commentary_{$match->id}_" . $match->updated_at->timestamp;
-                    Cache::put($cacheKey, $data, 3600);
+                    $match->update(['ai_commentary' => $data]);
                 }
             }
         }

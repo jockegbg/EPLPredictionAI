@@ -20,10 +20,10 @@
             @if($gameweeks->count() > 0)
                 @php
                     $latest = $gameweeks->shift();
-                    $summary = \Illuminate\Support\Facades\Cache::get("pundit_summary_{$latest->id}", [
+                    $summary = $latest->pundit_summary ?? [
                         'headline' => "Gameweek {$latest->name}: The Preview",
                         'subheadline' => "The football continues. Will your predictions hold up, or will you crumble under pressure?"
-                    ]);
+                    ];
                 @endphp
 
                 <!-- Main Feature -->
@@ -106,10 +106,10 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                         @foreach($gameweeks as $gw)
                             @php
-                                $gwSummary = \Illuminate\Support\Facades\Cache::get("pundit_summary_{$gw->id}", [
+                                $gwSummary = $gw->pundit_summary ?? [
                                     'headline' => "Gameweek {$gw->name}",
                                     'subheadline' => "Detailed analysis of past performance."
-                                ]);
+                                ];
                             @endphp
                             <a href="{{ route('pundit.show', $gw) }}" class="block group border-t border-zinc-200 pt-4">
                                 @if($gw->image_path)

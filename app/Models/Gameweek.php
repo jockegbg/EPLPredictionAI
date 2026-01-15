@@ -18,11 +18,13 @@ class Gameweek extends Model
         'tournament_id',
         'is_custom',
         'image_path',
+        'pundit_summary',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'pundit_summary' => 'array',
     ];
 
     public function matches(): HasMany

@@ -198,12 +198,18 @@ class PunditService
 
     public function generateGameweekImage(\App\Models\Gameweek $gameweek): ?string
     {
-        $prompt = "Editorial newspaper cartoon illustration of an English football pundit, hand-drawn ink line art, bold sarcastic expression, slightly exaggerated facial features, black and white, rough sketch style, minimal shading, British sports newspaper aesthetic, confident and cynical mood, no colour or one muted accent, expressive eyebrows, clean white background.
-        
-        Context for specific drawing content:
-        Gameweek {$gameweek->name}: {$gameweek->headline} - {$gameweek->subheadline}.
-        
-        Make it visually striking, witty, and chaotic.";
+        // Ensure we have the summary data
+        $summary = $gameweek->pundit_summary ?? ['headline' => $gameweek->name, 'subheadline' => ''];
+        $headline = $summary['headline'] ?? $gameweek->name;
+        $subheadline = $summary['subheadline'] ?? '';
+
+        $basePrompt = "Wide British sports newspaper cartoon. talk-show studio placed on the centre circle of a football pitch under bright floodlights. Three animated British pundit characters at a desk: (1) grumpy cynical bald man with arms folded and raised eyebrow, (2) cheerful host with loosened tie leaning forward, (3) loud chaotic pundit pointing and shouting with headset, papers flying. Ink line art with rough hand-drawn texture, black and white with light grey wash, subtle stadium crowd blur in background. Funny sarcastic mood, editorial illustration, not childish. Cinematic wide composition, aspect ratio 1.91:1. Leave clean empty whitespace at bottom for a newspaper caption area.";
+
+        $context = "Context: The article title is '{$headline}'. The description is '{$subheadline}'. Make the scene reflect this specific topic if possible, but keep the core pundit studio setting.";
+
+        $negative = "Avoid: photorealism, 3D render, glossy gradients, anime, manga, neon colors, meme text, brand logos, real persons, AI artifacts, extra fingers, distorted faces, watermark.";
+
+        $prompt = "{$basePrompt}\n\n{$context}\n\n{$negative}";
 
         // Use 1792x1024 for wide aspect ratio (approx 1.75:1, closest to requested 1.91:1 supported by DALL-E)
         $imageUrl = $this->aiService->generateImage($prompt, "1792x1024");

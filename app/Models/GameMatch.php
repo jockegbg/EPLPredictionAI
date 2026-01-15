@@ -21,10 +21,12 @@ class GameMatch extends Model
         'away_score',
         'start_time',
         'status',
+        'ai_commentary',
     ];
 
     protected $casts = [
         'start_time' => 'datetime',
+        'ai_commentary' => 'array',
     ];
 
     public function gameweek(): BelongsTo
