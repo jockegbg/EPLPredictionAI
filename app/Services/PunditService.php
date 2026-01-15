@@ -210,16 +210,15 @@ class PunditService
 
         if ($imageUrl) {
             try {
-                $contents = file_get_contents($imageUrl);
-                $filename = "gameweek_{$gameweek->id}_" . time() . ".png";
-                $path = "gameweeks/{$filename}";
+                // Upload to Cloudinary
+                $uploadedFile = cloudinary()->upload($imageUrl, [
+                    'folder' => 'gameweeks',
+                    'public_id' => "gameweek_{$gameweek->id}_" . time(),
+                ])->getSecurePath();
 
-                // Store in public disk
-                \Illuminate\Support\Facades\Storage::disk('public')->put($path, $contents);
-
-                return $path;
+                return $uploadedFile;
             } catch (\Exception $e) {
-                Log::error("Failed to download/save AI image: " . $e->getMessage());
+                Log::error("Failed to upload AI image to Cloudinary: " . $e->getMessage());
             }
         }
 
