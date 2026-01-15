@@ -10,6 +10,7 @@ use App\Models\Prediction;
 use App\Models\Tournament;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Artisan;
 
 class ImportData extends Command
 {
@@ -19,6 +20,11 @@ class ImportData extends Command
     public function handle()
     {
         $this->info('Importing data...');
+
+        // Force fresh migration
+        $this->info('Running migrate:fresh...');
+        Artisan::call('migrate:fresh', ['--force' => true]);
+        $this->info(Artisan::output());
 
         if (!Storage::exists('data_export.json')) {
             $this->error('File not found: storage/app/data_export.json');
