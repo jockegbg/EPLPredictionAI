@@ -48,7 +48,28 @@ class LeaderboardController extends Controller
         $users = $query->orderByDesc('predictions_sum_points_awarded')
             ->paginate(20);
 
-        // ... existing hit rate calc ...
+        // Calculate Hit Rates
+        $users->getCollection()->each(function ($user) {
+            $played = $user->predictions->filter(function ($p) {
+                return $p->match && !is_null($p->match->home_score) && !is_null($p->match->away_score);
+            })->count();
+
+            $hits = $user->predictions->filter(function ($p) {
+                $m = $p->match;
+                if (!$m || is_null($m->home_score) || is_null($m->away_score))
+                    return false;
+
+                $predDiff = $p->predicted_home - $p->predicted_away;
+                $actualDiff = $m->home_score - $m->away_score;
+
+                // Compare signs: -1 (Away), 0 (Draw), 1 (Home)
+                return ($predDiff <=> 0) === ($actualDiff <=> 0);
+            })->count();
+
+            $user->predictions_played = $played;
+            $user->predictions_hit = $hits;
+            $user->hit_rate = $played > 0 ? round(($hits / $played) * 100) : 0;
+        });
 
         // Fetch Gameweeks for the matrix
         if ($currentTournament) {
