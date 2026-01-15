@@ -107,6 +107,11 @@
                                                                 @csrf
                                                                 <button type="submit" class="text-blue-400 hover:text-white transition" title="Recalculate Scores">⟳</button>
                                                             </form>
+
+                                                            <form action="{{ route('admin.gameweeks.generate-punditry', $gw) }}" method="POST" onsubmit="return confirm('Force generate AI Pundit content? This may take simple time.');">
+                                                                @csrf
+                                                                <button type="submit" class="text-pl-green hover:text-white transition" title="Generate Pundit Content">🤖</button>
+                                                            </form>
                                                             
                                                             <form id="delete-gameweek-{{ $gw->id }}" method="POST" action="{{ route('admin.gameweeks.destroy', $gw) }}" style="display: none;">
                                                                 @csrf

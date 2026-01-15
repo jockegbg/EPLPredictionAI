@@ -27,6 +27,7 @@ Route::middleware('auth')->group(function () {
     Route::post('admin/import', [App\Http\Controllers\Admin\ImportController::class, 'store'])->name('admin.import.store');
     Route::post('admin/gameweeks/adjust-points', [GameweekController::class, 'adjustPoints'])->name('admin.gameweeks.adjust-points');
     Route::post('admin/gameweeks/{gameweek}/recalculate', [GameweekController::class, 'recalculateScores'])->name('admin.gameweeks.recalculate');
+    Route::post('admin/gameweeks/{gameweek}/generate-punditry', [GameweekController::class, 'generatePunditry'])->name('admin.gameweeks.generate-punditry');
 
     // User Management
     Route::resource('admin/users', \App\Http\Controllers\Admin\UserController::class)->names('admin.users');

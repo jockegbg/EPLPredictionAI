@@ -120,4 +120,17 @@ class GameweekController extends Controller
         }
         return back()->with('success', "Recalculated scores for {$count} completed matches.");
     }
+
+    public function generatePunditry(Gameweek $gameweek): RedirectResponse
+    {
+        try {
+            \Illuminate\Support\Facades\Artisan::call('pundit:generate', [
+                'gameweek_id' => $gameweek->id,
+                '--force' => true
+            ]);
+            return back()->with('success', 'Pundit commentary generation triggered.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to generate punditry: ' . $e->getMessage());
+        }
+    }
 }
