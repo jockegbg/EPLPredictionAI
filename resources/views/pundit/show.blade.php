@@ -40,7 +40,8 @@
                 <!-- Gameweek Image (if available) -->
                 @if($gameweek && $gameweek->image_path)
                     <figure class="mb-10 text-center px-4">
-                        <img src="{{ asset('storage/' . $gameweek->image_path) }}" alt="Gameweek Art"
+                        <img src="{{ Str::startsWith($gameweek->image_path, 'http') ? $gameweek->image_path : asset('storage/' . $gameweek->image_path) }}"
+                            alt="Gameweek Art"
                             class="w-full max-w-3xl mx-auto h-auto rounded-sm shadow-xl border border-zinc-200">
                         <figcaption class="mt-2 text-xs text-zinc-500 font-serif italic text-center">
                             Fig 1. The expected chaos of the weekend.

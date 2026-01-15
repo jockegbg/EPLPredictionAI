@@ -36,7 +36,8 @@
                             <div
                                 class="mb-6 relative group cursor-pointer overflow-hidden rounded-lg shadow-2xl border-4 border-black">
                                 @if($latest->image_path)
-                                    <img src="{{ asset('storage/' . $latest->image_path) }}" alt="Gameweek Art"
+                                    <img src="{{ Str::startsWith($latest->image_path, 'http') ? $latest->image_path : asset('storage/' . $latest->image_path) }}"
+                                        alt="Gameweek Art"
                                         class="w-full h-96 object-cover transform transition duration-700 group-hover:scale-110">
                                 @else
                                     <!-- Fallback Placeholder -->
@@ -113,7 +114,8 @@
                             <a href="{{ route('pundit.show', $gw) }}" class="block group border-t border-zinc-200 pt-4">
                                 @if($gw->image_path)
                                     <div class="mb-4 overflow-hidden rounded-sm border border-zinc-900 shadow-sm relative">
-                                        <img src="{{ asset('storage/' . $gw->image_path) }}" alt="Gameweek Art"
+                                        <img src="{{ Str::startsWith($gw->image_path, 'http') ? $gw->image_path : asset('storage/' . $gw->image_path) }}"
+                                            alt="Gameweek Art"
                                             class="w-full h-48 object-cover transform transition duration-500 group-hover:scale-105 filter grayscale hover:grayscale-0">
                                         <div
                                             class="absolute top-0 right-0 bg-black text-white text-[10px] uppercase font-bold px-2 py-1">
