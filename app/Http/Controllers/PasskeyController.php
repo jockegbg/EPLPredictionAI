@@ -24,10 +24,16 @@ class PasskeyController extends Controller
     {
         $request->validate([
             'passkey' => 'required|string',
+            'passkey_options' => 'required|string',
         ]);
 
-        // Store the passkey with the JSON string
-        $passkey = $storePasskey->execute($request->user(), $request->input('passkey'));
+        // Store the passkey with all required parameters
+        $passkey = $storePasskey->execute(
+            authenticatable: $request->user(),
+            passkeyJson: $request->input('passkey'),
+            passkeyOptionsJson: $request->input('passkey_options'),
+            hostName: $request->getHost(),
+        );
 
         // Auto-generate a descriptive name
         $userAgent = $request->userAgent();

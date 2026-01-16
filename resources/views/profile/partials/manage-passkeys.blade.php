@@ -47,7 +47,7 @@
         <form id="passkey-register-form" method="POST" action="{{ route('passkeys.store') }}" style="display: none;">
             @csrf
             <input type="hidden" name="passkey" id="passkey-response-input">
-            <input type="hidden" name="passkey_name" id="passkey-name-input">
+            <input type="hidden" name="passkey_options" id="passkey-options-input">
         </form>
 
         <script>
@@ -67,14 +67,9 @@
                     // 2. Browser Ceremony
                     const startRegistrationResponse = await SimpleWebAuthnBrowser.startRegistration({ optionsJSON: options });
 
-                    // 3. Submit Response
+                    // 3. Submit Response with options
                     document.getElementById('passkey-response-input').value = JSON.stringify(startRegistrationResponse);
-
-                    const name = prompt('Name this passkey (e.g. "My iPhone"):');
-                    if (name) {
-                        document.getElementById('passkey-name-input').value = name;
-                    }
-
+                    document.getElementById('passkey-options-input').value = JSON.stringify(options);
                     document.getElementById('passkey-register-form').submit();
 
                 } catch (error) {
