@@ -23,17 +23,48 @@ class PasskeyController extends Controller
     public function store(Request $request, \Spatie\LaravelPasskeys\Actions\StorePasskeyAction $storePasskey)
     {
         $request->validate([
-            'passkey' => 'required',
-            'passkey_name' => 'nullable|string',
+            'passkey' => 'required|string',
         ]);
 
-        $passkey = $storePasskey->execute($request->user(), $request->all());
+        // Store the passkey with the JSON string
+        $passkey = $storePasskey->execute($request->user(), $request->input('passkey'));
 
-        if ($request->filled('passkey_name')) {
-            $passkey->update(['name' => $request->passkey_name]);
-        }
+        // Auto-generate a descriptive name
+        $userAgent = $request->userAgent();
+        $browser = $this->detectBrowser($userAgent);
+        $date = now()->format('Y-m-d');
+        $autoName = "{$date} - {$browser}";
+
+        $passkey->update(['name' => $autoName]);
 
         return back()->with('status', 'passkey-created');
+    }
+
+    /**
+     * Detect browser/device from user agent
+     */
+    private function detectBrowser(string $userAgent): string
+    {
+        if (stripos($userAgent, 'Edg') !== false)
+            return 'Edge';
+        if (stripos($userAgent, 'Chrome') !== false)
+            return 'Chrome';
+        if (stripos($userAgent, 'Safari') !== false)
+            return 'Safari';
+        if (stripos($userAgent, 'Firefox') !== false)
+            return 'Firefox';
+        if (stripos($userAgent, 'Opera') !== false || stripos($userAgent, 'OPR') !== false)
+            return 'Opera';
+
+        // Check for mobile devices
+        if (stripos($userAgent, 'iPhone') !== false)
+            return 'iPhone';
+        if (stripos($userAgent, 'iPad') !== false)
+            return 'iPad';
+        if (stripos($userAgent, 'Android') !== false)
+            return 'Android';
+
+        return 'Desktop';
     }
 
     /**
