@@ -11,8 +11,19 @@ class ConfigureCeremonyStepManagerFactory extends BaseAction
     {
         $factory = parent::execute();
 
-        // Add localhost to secured Relying Party IDs to bypass HTTPS check for local development
-        $factory->setSecuredRelyingPartyId(['localhost']);
+        // Build list of secured domains (HTTPS or localhost)
+        $securedDomains = ['localhost'];
+
+        // Add production domain from APP_URL if it exists
+        $appUrl = config('app.url');
+        if ($appUrl) {
+            $host = parse_url($appUrl, PHP_URL_HOST);
+            if ($host && $host !== 'localhost') {
+                $securedDomains[] = $host;
+            }
+        }
+
+        $factory->setSecuredRelyingPartyId($securedDomains);
 
         return $factory;
     }
