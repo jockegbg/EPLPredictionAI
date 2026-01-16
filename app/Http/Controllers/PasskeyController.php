@@ -14,7 +14,7 @@ class PasskeyController extends Controller
      */
     public function registerOptions(Request $request, \Spatie\LaravelPasskeys\Actions\GeneratePasskeyRegisterOptionsAction $generateOptions)
     {
-        return $generateOptions($request->user());
+        return $generateOptions->execute($request->user());
     }
 
     /**
@@ -27,7 +27,7 @@ class PasskeyController extends Controller
             'passkey_name' => 'nullable|string',
         ]);
 
-        $passkey = $storePasskey($request->user(), $request->all());
+        $passkey = $storePasskey->execute($request->user(), $request->all());
 
         if ($request->filled('passkey_name')) {
             $passkey->update(['name' => $request->passkey_name]);
