@@ -27,21 +27,20 @@ class PasskeyController extends Controller
             'passkey_options' => 'required|string',
         ]);
 
-        // Store the passkey with all required parameters
-        $passkey = $storePasskey->execute(
-            authenticatable: $request->user(),
-            passkeyJson: $request->input('passkey'),
-            passkeyOptionsJson: $request->input('passkey_options'),
-            hostName: $request->getHost(),
-        );
-
         // Auto-generate a descriptive name
         $userAgent = $request->userAgent();
         $browser = $this->detectBrowser($userAgent);
         $date = now()->format('Y-m-d');
         $autoName = "{$date} - {$browser}";
 
-        $passkey->update(['name' => $autoName]);
+        // Store the passkey with all required parameters and auto-generated name
+        $passkey = $storePasskey->execute(
+            authenticatable: $request->user(),
+            passkeyJson: $request->input('passkey'),
+            passkeyOptionsJson: $request->input('passkey_options'),
+            hostName: $request->getHost(),
+            additionalProperties: ['name' => $autoName],
+        );
 
         return back()->with('status', 'passkey-created');
     }
