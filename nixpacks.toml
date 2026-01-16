@@ -4,7 +4,7 @@
 providers = ["php", "node"]
 
 [phases.setup]
-nixPkgs = ["php82", "php82Extensions.pdo_mysql", "php82Extensions.bcmath", "php82Extensions.gd", "php82Extensions.intl", "php82Extensions.zip", "nodejs_20", "npm-9_x"]
+nixPkgs = ["php82", "php82Extensions.pdo_mysql", "php82Extensions.bcmath", "php82Extensions.gd", "php82Extensions.intl", "php82Extensions.zip", "php82Extensions.sodium", "php82Extensions.gmp", "nodejs_20", "npm-9_x"]
 
 [phases.build]
 dependsOn = ["setup"]
@@ -20,4 +20,4 @@ cmds = [
 ]
 
 [start]
-cmd = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
+cmd = "php artisan storage:link && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
