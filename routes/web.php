@@ -67,6 +67,22 @@ Route::middleware('auth')->group(function () {
 
     // Passkey Management
     Route::get('/passkeys/register-options', [App\Http\Controllers\PasskeyController::class, 'registerOptions'])->name('passkeys.register_options');
+
+    // TEMPORARY DEBUG: Expose errors for passkey troubleshooting
+    Route::get('/debug/passkey-test', function (\Spatie\LaravelPasskeys\Actions\GeneratePasskeyRegisterOptionsAction $generateOptions) {
+        try {
+            return $generateOptions(auth()->user());
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => get_class($e),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => collect($e->getTrace())->take(5)->toArray()
+            ], 500);
+        }
+    });
+
     Route::post('/passkeys', [App\Http\Controllers\PasskeyController::class, 'store'])->name('passkeys.store');
     Route::delete('/passkeys/{passkey}', [App\Http\Controllers\PasskeyController::class, 'destroy'])->name('passkeys.destroy');
 });
