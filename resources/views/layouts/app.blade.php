@@ -15,14 +15,14 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- Scripts -->
-    <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
     <script>
         const { startRegistration, startAuthentication } = SimpleWebAuthnBrowser;
     </script>
-    <script src="//unpkg.com/alpinejs" defer></script>
+
+
 </head>
 
 <body class="font-sans antialiased">

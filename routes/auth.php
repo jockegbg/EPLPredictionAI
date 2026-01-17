@@ -22,6 +22,15 @@ Route::middleware('guest')->group(function () {
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
+    // Manual Score Submission
+    Route::post('/users/{user}/score', [App\Http\Controllers\Admin\UserScoreController::class, 'store'])->name('users.submit-score');
+    Route::get('/users/score-data', [App\Http\Controllers\Admin\UserScoreController::class, 'getData'])->name('users.score-data');
+    Route::get('/users/{user}/logs', [App\Http\Controllers\Admin\UserLogController::class, 'index'])->name('users.logs');
+
+    Route::post('/users/{user}/remove-passkeys', [App\Http\Controllers\Admin\UserController::class, 'removePasskeys'])->name('users.remove-passkeys');
+    Route::post('/users/{user}/reset-password', [App\Http\Controllers\Admin\UserController::class, 'resetPassword'])->name('users.reset-password');
+    Route::resource('users', App\Http\Controllers\Admin\UserController::class);
+
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 

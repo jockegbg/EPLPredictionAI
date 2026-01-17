@@ -92,6 +92,22 @@ class PredictionController extends Controller
                     'is_defence_chip' => $isDefence,
                 ]
             );
+
+            // Log the prediction
+            \App\Models\ActivityLog::create([
+                'user_id' => $user->id,
+                'action' => 'prediction',
+                'method' => 'POST',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'details' => [
+                    'match_id' => $pred['match_id'],
+                    'home' => $pred['home'],
+                    'away' => $pred['away'],
+                    'is_double' => $isDouble,
+                    'is_defence' => $isDefence
+                ],
+            ]);
         }
 
         return back()->with('success', 'Predictions saved!');

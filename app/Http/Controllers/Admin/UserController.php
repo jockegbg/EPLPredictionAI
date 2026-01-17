@@ -62,4 +62,68 @@ class UserController extends Controller
         $user->passkeys()->delete();
         return back()->with('success', 'All passkeys removed for this user.');
     }
+
+    public function scoreData(Request $request)
+    {
+        if ($request->has('all_tournaments')) {
+            if ($request->has('user_id')) {
+                $user = User::findOrFail($request->user_id);
+                return $user->tournaments()->get(['tournaments.id', 'tournaments.name']);
+            }
+            return \App\Models\Tournament::all(['id', 'name']);
+        }
+
+        if ($request->has('tournament_id')) {
+            return \App\Models\Gameweek::where('tournament_id', $request->tournament_id)
+                ->orderBy('start_date', 'desc')
+                ->get(['id', 'name']);
+        }
+
+        if ($request->has('gameweek_id')) {
+            $matches = \App\Models\GameMatch::where('gameweek_id', $request->gameweek_id)
+                ->get();
+
+            return $matches->map(function ($match) {
+                return [
+                    'id' => $match->id,
+                    'display_name' => $match->home_team . ' vs ' . $match->away_team,
+                ];
+            });
+        }
+
+        return [];
+    }
+
+    public function submitScore(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'match_id' => 'required|exists:matches,id',
+            'predicted_home' => 'required|integer|min:0',
+            'predicted_away' => 'required|integer|min:0',
+            'chip' => 'nullable|string|in:double_points,defence_chip',
+        ]);
+
+        $prediction = \App\Models\Prediction::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'match_id' => $validated['match_id'],
+            ],
+            [
+                'predicted_home' => $validated['predicted_home'],
+                'predicted_away' => $validated['predicted_away'],
+                'chip' => $validated['chip'] ?: null,
+            ]
+        );
+
+        // Auto-calculate points if the match is already completed
+        $match = $prediction->match;
+        if ($match && $match->status === 'completed') {
+            $scoringService = app(\App\Services\ScoringService::class);
+            $points = $scoringService->calculatePredictionScore($match, $prediction);
+            $prediction->update(['points_awarded' => $points]);
+        }
+
+        return back()->with('success', 'Score submitted for ' . $user->name);
+    }
+
 }

@@ -38,6 +38,9 @@ Route::middleware('auth')->group(function () {
     Route::post('admin/pundit/{gameweek}/regenerate-commentary', [\App\Http\Controllers\Admin\AdminPunditController::class, 'regenerateCommentary'])->name('admin.pundit.regenerate-commentary');
 
     // User Management
+    Route::get('admin/users/score-data', [\App\Http\Controllers\Admin\UserController::class, 'scoreData'])->name('admin.users.score-data');
+    Route::post('admin/users/{user}/score', [\App\Http\Controllers\Admin\UserController::class, 'submitScore'])->name('admin.users.score');
+    Route::get('admin/users/{user}/logs', [\App\Http\Controllers\Admin\UserLogController::class, 'index'])->name('admin.users.logs');
     Route::resource('admin/users', \App\Http\Controllers\Admin\UserController::class)->names('admin.users');
     Route::post('admin/users/{user}/reset-password', [\App\Http\Controllers\Admin\UserController::class, 'resetPassword'])->name('admin.users.reset-password');
     Route::post('admin/users/{user}/remove-passkeys', [\App\Http\Controllers\Admin\UserController::class, 'removePasskeys'])->name('admin.users.remove-passkeys');
