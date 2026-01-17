@@ -111,7 +111,8 @@ class UserController extends Controller
             [
                 'predicted_home' => $validated['predicted_home'],
                 'predicted_away' => $validated['predicted_away'],
-                'chip' => $validated['chip'] ?: null,
+                'is_double_points' => $validated['chip'] === 'double_points',
+                'is_defence_chip' => $validated['chip'] === 'defence_chip',
             ]
         );
 
