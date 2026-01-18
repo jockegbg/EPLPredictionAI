@@ -42,7 +42,7 @@
                             container.style.opacity = '0.5';
                             
                             try {
-                                const response = await fetch(`{{ route('leaderboard.live') }}?tournament_id={{ $currentTournament->id ?? '' }}`);
+                                const response = await fetch(`{{ route('leaderboard.live', [], false) }}?tournament_id={{ $currentTournament->id ?? '' }}`);
                                 const html = await response.text();
                                 container.innerHTML = html;
                             } catch (error) {
