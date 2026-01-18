@@ -76,7 +76,16 @@
                                                 </div>
 
                                                 <span class="text-xs text-pl-green font-mono mt-2 ml-7">
-                                                    {{ $match->status === 'completed' ? $match->home_score . ' - ' . $match->away_score : $match->start_time->format('H:i') }}
+                                                    @if($match->status === 'in_progress')
+                                                        <span class="animate-pulse text-pl-pink font-bold">
+                                                            {{ $match->home_score }} - {{ $match->away_score }}
+                                                            <span class="text-[10px] ml-1">{{ $match->display_minutes }}</span>
+                                                        </span>
+                                                    @elseif($match->status === 'completed')
+                                                        {{ $match->home_score }} - {{ $match->away_score }}
+                                                    @else
+                                                        {{ $match->start_time->format('H:i') }}
+                                                    @endif
                                                 </span>
                                             </div>
                                         </td>

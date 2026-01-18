@@ -22,6 +22,7 @@ class GameMatch extends Model
         'start_time',
         'status',
         'ai_commentary',
+        'minutes',
     ];
 
     protected $casts = [
@@ -56,6 +57,42 @@ class GameMatch extends Model
         }
 
         return asset("images/teams/default_badge.svg");
+    }
+
+    public function getDisplayMinutesAttribute()
+    {
+        if ($this->status !== 'in_progress') {
+            return null;
+        }
+
+        $lastMinutes = $this->minutes ?? 0;
+
+        // Calculate minutes elapsed since last DB update
+        // We use 'updated_at' 
+        $minutesSinceUpdate = now()->diffInMinutes($this->updated_at);
+        $currentMinute = $lastMinutes + $minutesSinceUpdate;
+
+        // Logic to cap at half-time / full-time markers if we suspect it
+        // This is heuristic because we don't have strict 'HT' state in DB yet (just 'in_progress')
+        // Standard halves are 45 min.
+
+        // If we are around 45+, limit to 45+ until update pushes it over
+        // Assumption: API pushes ~46 when 2nd half starts.
+        if ($lastMinutes <= 45 && $currentMinute > 45) {
+            return "45+";
+        }
+
+        // If we are around 90+, limit to 90+
+        if ($lastMinutes <= 90 && $currentMinute > 90) {
+            return "90+";
+        }
+
+        // Safety cap for extremely long intervals (e.g. sync broken for hours)
+        if ($currentMinute > 130) {
+            return "FT?"; // Or just 90+
+        }
+
+        return $currentMinute . "'";
     }
 
     public function predictions(): HasMany
