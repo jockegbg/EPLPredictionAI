@@ -22,6 +22,24 @@ class ApiFootballService
         $this->baseUrl = config('services.api-football.base_url');
     }
 
+    protected $teamMap = [
+        'Wolverhampton Wanderers' => 'Wolves',
+        'Newcastle United' => 'Newcastle',
+        'Manchester City' => 'Man City',
+        'Manchester United' => 'Man Utd',
+        'Tottenham Hotspur' => 'Spurs',
+        'Nottingham Forest' => "Nott'm Forest",
+        'Brighton & Hove Albion' => 'Brighton',
+        'West Ham United' => 'West Ham',
+        'Leicester City' => 'Leicester',
+        'Ipswich Town' => 'Ipswich',
+    ];
+
+    protected function normalizeTeamName($name)
+    {
+        return $this->teamMap[$name] ?? $name;
+    }
+
     public function cancelRun(string $reason)
     {
         Log::info("ApiFootball: Live sync cancelled - {$reason}");
@@ -55,7 +73,10 @@ class ApiFootballService
         // 3. Make API Call
         $this->fetchAndProcessLiveFixtures();
 
-        // 4. Set Cache (5 mins = 300 seconds)
+        // 4. Check for 'in_progress' matches that might have finished (and thus dropped from live feed)
+        $this->syncStuckMatches();
+
+        // 5. Set Cache (5 mins = 300 seconds)
         Cache::put('api_football_last_call', true, 300);
     }
 
@@ -85,12 +106,9 @@ class ApiFootballService
 
     protected function processFixture($data)
     {
-        $homeTeamName = $data['teams']['home']['name'];
-        $awayTeamName = $data['teams']['away']['name'];
+        $homeTeamName = $this->normalizeTeamName($data['teams']['home']['name']);
+        $awayTeamName = $this->normalizeTeamName($data['teams']['away']['name']);
 
-        // Find match in our DB - Using fuzzy match or precise name logic needed?
-        // For now, assuming names match or we have a mapping. 
-        // Simple name matching:
         $match = GameMatch::where('home_team', $homeTeamName)
             ->where('away_team', $awayTeamName)
             // Relaxed date check: within 24 hours just in case
@@ -98,7 +116,7 @@ class ApiFootballService
             ->first();
 
         if (!$match) {
-            // Log::warning("ApiFootball: Match not found in DB: $homeTeamName vs $awayTeamName");
+            Log::warning("ApiFootball: Match not found in DB: $homeTeamName vs $awayTeamName");
             return;
         }
 
@@ -133,6 +151,45 @@ class ApiFootballService
             // ... We can dispatch an event or call service directly
             Log::info("ApiFootball: Match {$match->id} completed. Calculating points.");
             app(\App\Services\ScoringService::class)->calculatePoints($match);
+        }
+    }
+
+    protected function syncStuckMatches()
+    {
+        // Find matches that are 'in_progress' but haven't been updated recently?
+        // Or simply ALL in_progress matches to ensure we catch the transition to Completed.
+        $stuckMatches = GameMatch::where('status', 'in_progress')->get();
+
+        if ($stuckMatches->isEmpty()) {
+            return;
+        }
+
+        // Group by Date to minimize API calls
+        $dates = $stuckMatches->groupBy(function ($match) {
+            return $match->start_time->format('Y-m-d');
+        });
+
+        foreach ($dates as $date => $matches) {
+            Log::info("ApiFootball: Checking stuck matches for date {$date}");
+
+            // Fetch ALL fixtures for this date
+            $response = Http::withHeaders([
+                'x-rapidapi-key' => $this->apiKey,
+                'x-rapidapi-host' => 'v3.football.api-sports.io'
+            ])->get("{$this->baseUrl}/fixtures", [
+                        'date' => $date,
+                        // 'league' => $this->leagueId // Optional
+                    ]);
+
+            if ($response->failed()) {
+                Log::error("ApiFootball: Failed to fetch fixtures for date {$date}");
+                continue;
+            }
+
+            $fixtures = $response->json()['response'] ?? [];
+            foreach ($fixtures as $fixture) {
+                $this->processFixture($fixture);
+            }
         }
     }
 }
