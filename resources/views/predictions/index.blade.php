@@ -91,246 +91,258 @@
                                         $userGwPreds = Auth::user()->predictions->whereIn('match_id', $gwMatchIds);
                                         $initDouble = $userGwPreds->where('is_double_points', true)->first()?->match_id ?? 'null';
                                         $initDefence = $userGwPreds->where('is_defence_chip', true)->first()?->match_id ?? 'null';
+                                        
+                                        // Group matches by date
+                                        $matchesByDate = $gameweek->matches->sortBy('start_time')->groupBy(function($m) {
+                                            return $m->start_time->format('l, M jS');
+                                        });
                                     @endphp
 
-                                    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
-                                        x-data="{ doubleId: {{ $initDouble }}, defenceId: {{ $initDefence }} }">
-                                        @php
-                                            // Check if the double chip is already "spent" on a locked match in this gameweek
-                                            $gameweekDoubleLocked = false;
-                                            foreach ($gameweek->matches as $gwMatch) {
-                                                $gwPred = Auth::user()->predictions->where('match_id', $gwMatch->id)->first();
-                                                $gwMatchLocked = $gwMatch->start_time->isPast() || !is_null($gwMatch->home_score);
-                                                if ($gwPred && $gwPred->is_double_points && $gwMatchLocked) {
-                                                    $gameweekDoubleLocked = true;
-                                                    break;
-                                                }
-                                            }
-                                        @endphp
-                                        @foreach($gameweek->matches as $match)
-                                            <div class="backdrop-blur-md rounded-2xl p-6 border shadow-xl transition-all duration-300 group relative"
-                                                :class="{
-                                                                            'bg-white/5 border-white/10 hover:bg-white/10 hover:border-pl-purple/50': doubleId != {{ $match->id }} && defenceId != {{ $match->id }},
-                                                                            'bg-pl-pink/10 border-pl-pink ring-1 ring-pl-pink shadow-[0_0_20px_rgba(255,40,130,0.4)] animate-pulse': doubleId == {{ $match->id }},
-                                                                            'bg-yellow-500/10 border-yellow-400 ring-1 ring-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.4)] animate-pulse': defenceId == {{ $match->id }}
-                                                                         }">
-
-                                                <!-- Match Time Badge -->
-                                                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                                                    <span
-                                                        class="bg-[#2f0034] text-white/70 text-xs font-bold px-3 py-1 rounded-full border border-white/10 shadow-sm whitespace-nowrap">
-                                                        {{ $match->start_time->format('D M d, H:i') }}
-                                                    </span>
-                                                </div>
-
-                                                <div class="mt-2 flex justify-between items-center mb-6">
-                                                    <!-- Home Team -->
-                                                    <div class="flex flex-col items-center w-1/3">
-                                                        <div class="relative w-16 h-16 mb-2 flex items-center justify-center">
-                                                            <img src="{{ $match->home_team_logo }}" alt="{{ $match->home_team }}"
-                                                                class="w-14 h-14 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)] group-hover:scale-110 transition duration-300"
-                                                                onerror="this.style.display='none'">
-                                                        </div>
-                                                        <div class="font-bold text-white text-lg truncate w-full text-center leading-tight">
-                                                            {{ $match->home_team }}</div>
-                                                    </div>
-
-                                                    <!-- VS -->
-                                                    <div class="text-center w-1/3 flex flex-col items-center justify-center">
-                                                        <span class="text-white/20 font-black text-2xl italic">VS</span>
-                                                    </div>
-
-                                                    <!-- Away Team -->
-                                                    <div class="flex flex-col items-center w-1/3">
-                                                        <div class="relative w-16 h-16 mb-2 flex items-center justify-center">
-                                                            <img src="{{ $match->away_team_logo }}" alt="{{ $match->away_team }}"
-                                                                class="w-14 h-14 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)] group-hover:scale-110 transition duration-300"
-                                                                onerror="this.style.display='none'">
-                                                        </div>
-                                                        <div class="font-bold text-white text-lg truncate w-full text-center leading-tight">
-                                                            {{ $match->away_team }}</div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Score Inputs -->
+                                    <div x-data="{ doubleId: {{ $initDouble }}, defenceId: {{ $initDefence }} }">
+                                        @foreach($matchesByDate as $dateHeader => $dailyMatches)
+                                            <h4 class="text-pl-green font-bold text-lg mb-4 mt-8 uppercase tracking-widest pl-2 border-l-4 border-pl-green/50">
+                                                {{ $dateHeader }}
+                                            </h4>
+                                            
+                                            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                                 @php
-                                                    $isLocked = $match->start_time->isPast() || !is_null($match->home_score);
-                                                    $userPred = Auth::user()->predictions->where('match_id', $match->id)->first();
+                                                    // Check if the double chip is already "spent" on a locked match in this gameweek
+                                                    $gameweekDoubleLocked = false;
+                                                    foreach ($gameweek->matches as $gwMatch) {
+                                                        $gwPred = Auth::user()->predictions->where('match_id', $gwMatch->id)->first();
+                                                        $gwMatchLocked = $gwMatch->start_time->isPast() || !is_null($gwMatch->home_score);
+                                                        if ($gwPred && $gwPred->is_double_points && $gwMatchLocked) {
+                                                            $gameweekDoubleLocked = true;
+                                                            break;
+                                                        }
+                                                    }
                                                 @endphp
+                                                @foreach($dailyMatches as $match)
+                                                    <div class="backdrop-blur-md rounded-2xl p-6 border shadow-xl transition-all duration-300 group relative"
+                                                        :class="{
+                                                                                    'bg-white/5 border-white/10 hover:bg-white/10 hover:border-pl-purple/50': doubleId != {{ $match->id }} && defenceId != {{ $match->id }},
+                                                                                    'bg-pl-pink/10 border-pl-pink ring-1 ring-pl-pink shadow-[0_0_20px_rgba(255,40,130,0.4)] animate-pulse': doubleId == {{ $match->id }},
+                                                                                    'bg-yellow-500/10 border-yellow-400 ring-1 ring-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.4)] animate-pulse': defenceId == {{ $match->id }}
+                                                                                 }">
 
-                                                <div
-                                                    class="flex justify-center space-x-4 items-center bg-black/20 p-4 rounded-xl relative overflow-hidden mb-4 border border-white/5">
-                                                    @if($isLocked)
+                                                        <!-- Match Time Badge -->
+                                                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                                                            <span x-data x-text="new Date('{{ $match->start_time->toIso8601String() }}').toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})"
+                                                                title="{{ $match->start_time->format('l, M jS, Y h:i A') }}"
+                                                                class="bg-[#2f0034] text-white/70 text-xs font-bold px-3 py-1 rounded-full border border-white/10 shadow-sm whitespace-nowrap cursor-help">
+                                                                {{ $match->start_time->format('H:i') }}
+                                                            </span>
+                                                        </div>
+
+                                                        <div class="mt-2 flex justify-between items-center mb-6">
+                                                            <!-- Home Team -->
+                                                            <div class="flex flex-col items-center w-1/3">
+                                                                <div class="relative w-16 h-16 mb-2 flex items-center justify-center">
+                                                                    <img src="{{ $match->home_team_logo }}" alt="{{ $match->home_team }}"
+                                                                        class="w-14 h-14 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)] group-hover:scale-110 transition duration-300"
+                                                                        onerror="this.style.display='none'">
+                                                                </div>
+                                                                <div class="font-bold text-white text-lg truncate w-full text-center leading-tight">
+                                                                    {{ $match->home_team }}</div>
+                                                            </div>
+
+                                                            <!-- VS -->
+                                                            <div class="text-center w-1/3 flex flex-col items-center justify-center">
+                                                                <span class="text-white/20 font-black text-2xl italic">VS</span>
+                                                            </div>
+
+                                                            <!-- Away Team -->
+                                                            <div class="flex flex-col items-center w-1/3">
+                                                                <div class="relative w-16 h-16 mb-2 flex items-center justify-center">
+                                                                    <img src="{{ $match->away_team_logo }}" alt="{{ $match->away_team }}"
+                                                                        class="w-14 h-14 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)] group-hover:scale-110 transition duration-300"
+                                                                        onerror="this.style.display='none'">
+                                                                </div>
+                                                                <div class="font-bold text-white text-lg truncate w-full text-center leading-tight">
+                                                                    {{ $match->away_team }}</div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Score Inputs -->
+                                                        @php
+                                                            $isLocked = $match->start_time->isPast() || !is_null($match->home_score);
+                                                            $userPred = Auth::user()->predictions->where('match_id', $match->id)->first();
+                                                        @endphp
+
                                                         <div
-                                                            class="absolute inset-0 bg-[#2f0034]/90 backdrop-blur-[2px] z-10 flex items-center justify-center">
-                                                            @php
-                                                                $isCompleted = $match->status === 'completed';
-                                                                $cashoutEnabled = $gameweek->tournament->is_cashout_enabled;
-                                                                $minutesSinceStart = $match->start_time->diffInMinutes(now());
-                                                                $inCashoutWindow = $minutesSinceStart >= 10 && !$isCompleted;
-                                                                $hasPred = !is_null($userPred);
-                                                            @endphp
+                                                            class="flex justify-center space-x-4 items-center bg-black/20 p-4 rounded-xl relative overflow-hidden mb-4 border border-white/5">
+                                                            @if($isLocked)
+                                                                <div
+                                                                    class="absolute inset-0 bg-[#2f0034]/90 backdrop-blur-[2px] z-10 flex items-center justify-center">
+                                                                    @php
+                                                                        $isCompleted = $match->status === 'completed';
+                                                                        $cashoutEnabled = $gameweek->tournament->is_cashout_enabled;
+                                                                        $minutesSinceStart = $match->start_time->diffInMinutes(now());
+                                                                        $inCashoutWindow = $minutesSinceStart >= 10 && !$isCompleted;
+                                                                        $hasPred = !is_null($userPred);
+                                                                    @endphp
 
-                                                            @if($hasPred && $userPred->cashed_out_at)
-                                                                <div class="text-center">
-                                                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Cashed
-                                                                        Out</span>
-                                                                    <span
-                                                                        class="text-3xl font-black text-pl-green drop-shadow-md">{{ $userPred->cashout_points }}
-                                                                        pts</span>
-                                                                </div>
-                                                            @elseif($cashoutEnabled && $inCashoutWindow && $hasPred)
-                                                                <div class="text-center">
-                                                                    <div class="text-white text-lg font-bold mb-1">
-                                                                        {{ $match->home_score ?? 0 }} - {{ $match->away_score ?? 0 }}
-                                                                    </div>
-                                                                    <button type="button"
-                                                                        onclick="event.preventDefault(); if(confirm('Cash out now for 50% points?')) document.getElementById('cashout-form-{{ $match->id }}').submit();"
-                                                                        class="bg-pl-green text-pl-purple font-black uppercase text-xs px-4 py-2 rounded-full shadow-lg hover:bg-white transition transform hover:scale-105">
-                                                                        Cash Out 💰
-                                                                    </button>
+                                                                    @if($hasPred && $userPred->cashed_out_at)
+                                                                        <div class="text-center">
+                                                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Cashed
+                                                                                Out</span>
+                                                                            <span
+                                                                                class="text-3xl font-black text-pl-green drop-shadow-md">{{ $userPred->cashout_points }}
+                                                                                pts</span>
+                                                                        </div>
+                                                                    @elseif($cashoutEnabled && $inCashoutWindow && $hasPred)
+                                                                        <div class="text-center">
+                                                                            <div class="text-white text-lg font-bold mb-1">
+                                                                                {{ $match->home_score ?? 0 }} - {{ $match->away_score ?? 0 }}
+                                                                            </div>
+                                                                            <button type="button"
+                                                                                onclick="event.preventDefault(); if(confirm('Cash out now for 50% points?')) document.getElementById('cashout-form-{{ $match->id }}').submit();"
+                                                                                class="bg-pl-green text-pl-purple font-black uppercase text-xs px-4 py-2 rounded-full shadow-lg hover:bg-white transition transform hover:scale-105">
+                                                                                Cash Out 💰
+                                                                            </button>
 
-                                                                </div>
-                                                            @elseif($isCompleted || !is_null($match->home_score))
-                                                                <div class="text-center">
-                                                                    @if(!$isCompleted)
-                                                                        <div class="flex items-center justify-center gap-2 mb-1">
-                                                                            <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                                                                            <span class="text-[10px] font-bold text-pl-green uppercase tracking-wider">
-                                                                                LIVE
-                                                                            </span>
+                                                                        </div>
+                                                                    @elseif($isCompleted || !is_null($match->home_score))
+                                                                        <div class="text-center">
+                                                                            @if(!$isCompleted)
+                                                                                <div class="flex items-center justify-center gap-2 mb-1">
+                                                                                    <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                                                                                    <span class="text-[10px] font-bold text-pl-green uppercase tracking-wider">
+                                                                                        LIVE
+                                                                                    </span>
+                                                                                </div>
+                                                                            @else
+                                                                                <span class="text-[10px] font-bold text-white/50 uppercase tracking-wider block mb-1">
+                                                                                    FT
+                                                                                </span>
+                                                                            @endif
+                                                                            <span class="text-3xl font-black text-white drop-shadow-md">{{ $match->home_score ?? 0 }} -
+                                                                                {{ $match->away_score ?? 0 }}</span>
                                                                         </div>
                                                                     @else
-                                                                        <span class="text-[10px] font-bold text-white/50 uppercase tracking-wider block mb-1">
-                                                                            FT
+                                                                        <span
+                                                                            class="text-xs font-bold text-white/60 uppercase tracking-widest border border-white/20 px-3 py-1 rounded bg-black/30">Match
+                                                                            Started</span>
+                                                                    @endif
+                                                                </div>
+                                                            @endif
+
+                                                            {{-- Use match ID as key to prevent index collisions in loops --}}
+                                                            <input type="hidden" name="predictions[{{ $match->id }}][match_id]" value="{{ $match->id }}">
+
+                                                            <input type="number" name="predictions[{{ $match->id }}][home]" min="0" placeholder="-"
+                                                                class="w-14 h-14 text-center text-2xl font-bold bg-white/10 border-white/10 rounded-lg focus:ring-2 focus:ring-pl-green focus:border-pl-green text-white placeholder-white/30 disabled:opacity-50 transition-all"
+                                                                value="{{ $userPred?->predicted_home ?? '' }}" {{ $isLocked ? 'disabled' : '' }}>
+
+                                                            <span class="text-white/40 font-bold">:</span>
+
+                                                            <input type="number" name="predictions[{{ $match->id }}][away]" min="0" placeholder="-"
+                                                                class="w-14 h-14 text-center text-2xl font-bold bg-white/10 border-white/10 rounded-lg focus:ring-2 focus:ring-pl-green focus:border-pl-green text-white placeholder-white/30 disabled:opacity-50 transition-all"
+                                                                value="{{ $userPred?->predicted_away ?? '' }}" {{ $isLocked ? 'disabled' : '' }}>
+                                                        </div>
+
+                                                        <!-- Helpers & Chips -->
+                                                        <div class="flex items-center justify-between mt-4">
+                                                            <!-- Help Button -->
+                                                            <button type="button"
+                                                                @click="fetchCommentary({{ $match->id }}, '{{ addslashes($match->home_team) }}', '{{ addslashes($match->away_team) }}')"
+                                                                class="text-xs font-bold text-zinc-400 hover:text-pl-green flex items-center gap-1 transition-colors">
+                                                                <span>🔮</span> Ask Pundit
+                                                            </button>
+
+                                                            <div class="flex items-center gap-3">
+                                                                <!-- Double Chip Selector -->
+                                                                @if(!$isLocked)
+                                                                    @if(!$gameweekDoubleLocked || ($userPred && $userPred->is_double_points))
+                                                                        <label class="inline-flex items-center cursor-pointer group relative" title="Double Points">
+                                                                            <input type="radio" name="doubles[{{ $gameweek->id }}]" value="{{ $match->id }}"
+                                                                                class="peer sr-only"
+                                                                                @click="if(doubleId == {{ $match->id }}) { doubleId = null; $el.checked = false; } else { doubleId = {{ $match->id }}; if(defenceId == {{ $match->id }}) defenceId = null; }"
+                                                                                {{ $userPred?->is_double_points ? 'checked' : '' }}>
+
+                                                                            <div
+                                                                                class="flex items-center gap-1 px-2 py-1 rounded-full border border-white/10 bg-white/5 peer-checked:bg-pl-pink peer-checked:border-pl-pink peer-checked:shadow-[0_0_15px_rgba(255,40,130,0.4)] transition-all duration-300">
+                                                                                <div
+                                                                                    class="w-3 h-3 rounded-full border-2 border-white/30 peer-checked:border-white peer-checked:bg-white transition-all">
+                                                                                </div>
+                                                                                <span
+                                                                                    class="text-[10px] font-bold text-white/60 peer-checked:text-white uppercase tracking-wider group-hover:text-white transition-colors">
+                                                                                    2x
+                                                                                </span>
+                                                                            </div>
+                                                                        </label>
+                                                                    @else
+                                                                        <div class="opacity-30 cursor-not-allowed group" title="Two-times multiplier already used">
+                                                                            <div
+                                                                                class="flex items-center gap-1 px-2 py-1 rounded-full border border-white/10 bg-black/20">
+                                                                                <div class="w-3 h-3 rounded-full border-2 border-white/30"></div>
+                                                                                <span class="text-[10px] font-bold text-white/40 uppercase tracking-wider">2x</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    @endif
+                                                                @elseif($userPred?->is_double_points)
+                                                                    <span
+                                                                        class="text-[10px] font-bold bg-pl-pink text-white px-2 py-1 rounded-full shadow-lg shadow-pl-pink/30 uppercase tracking-wider animate-pulse">
+                                                                        🔥 2x Active
+                                                                    </span>
+                                                                @endif
+
+                                                                <!-- Defence Chip Selector -->
+                                                                @if($gameweek->tournament->score_wrong_outcome_penalty > 0)
+                                                                    @php
+                                                                        $gameweekDefenceLocked = false;
+                                                                        foreach ($gameweek->matches as $gwMatch) {
+                                                                            $gwPred = Auth::user()->predictions->where('match_id', $gwMatch->id)->first();
+                                                                            // Check if defence chip used on ANY match in this GW
+                                                                            $gwMatchLocked = $gwMatch->start_time->isPast();
+                                                                            if ($gwPred && $gwPred->is_defence_chip && $gwMatchLocked) {
+                                                                                $gameweekDefenceLocked = true;
+                                                                                break;
+                                                                            }
+                                                                        }
+                                                                    @endphp
+
+                                                                    @if(!$isLocked)
+                                                                        @if(!$gameweekDefenceLocked || ($userPred && $userPred->is_defence_chip))
+                                                                            <label class="inline-flex items-center cursor-pointer group relative"
+                                                                                title="Defence Chip (No Negative Points)">
+                                                                                <input type="radio" name="defence[{{ $gameweek->id }}]" value="{{ $match->id }}"
+                                                                                    class="peer sr-only"
+                                                                                    @click="if(defenceId == {{ $match->id }}) { defenceId = null; $el.checked = false; } else { defenceId = {{ $match->id }}; if(doubleId == {{ $match->id }}) doubleId = null; }"
+                                                                                    {{ $userPred?->is_defence_chip ? 'checked' : '' }}>
+
+                                                                                <div
+                                                                                    class="flex items-center gap-1 px-2 py-1 rounded-full border border-white/10 bg-white/5 peer-checked:bg-blue-600 peer-checked:border-blue-400 peer-checked:shadow-[0_0_15px_rgba(59,130,246,0.4)] transition-all duration-300">
+                                                                                    <div
+                                                                                        class="w-3 h-3 rounded-full border-2 border-white/30 peer-checked:border-white peer-checked:bg-white transition-all">
+                                                                                    </div>
+                                                                                    <span
+                                                                                        class="text-[10px] font-bold text-white/60 peer-checked:text-white uppercase tracking-wider group-hover:text-white transition-colors">
+                                                                                        🛡️
+                                                                                    </span>
+                                                                                </div>
+                                                                            </label>
+                                                                        @else
+                                                                            <div class="opacity-30 cursor-not-allowed group" title="Defence Chip already used">
+                                                                                <div
+                                                                                    class="flex items-center gap-1 px-2 py-1 rounded-full border border-white/10 bg-black/20">
+                                                                                    <div class="w-3 h-3 rounded-full border-2 border-white/30"></div>
+                                                                                    <span class="text-[10px] font-bold text-white/40 uppercase tracking-wider">🛡️</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        @endif
+                                                                    @elseif($userPred?->is_defence_chip)
+                                                                        <span
+                                                                            class="text-[10px] font-bold bg-blue-600 text-white px-2 py-1 rounded-full shadow-lg shadow-blue-600/30 uppercase tracking-wider">
+                                                                            🛡️ Active
                                                                         </span>
                                                                     @endif
-                                                                    <span class="text-3xl font-black text-white drop-shadow-md">{{ $match->home_score ?? 0 }} -
-                                                                        {{ $match->away_score ?? 0 }}</span>
-                                                                </div>
-                                                            @else
-                                                                <span
-                                                                    class="text-xs font-bold text-white/60 uppercase tracking-widest border border-white/20 px-3 py-1 rounded bg-black/30">Match
-                                                                    Started</span>
-                                                            @endif
-                                                        </div>
-                                                    @endif
-
-                                                    {{-- Use match ID as key to prevent index collisions in loops --}}
-                                                    <input type="hidden" name="predictions[{{ $match->id }}][match_id]" value="{{ $match->id }}">
-
-                                                    <input type="number" name="predictions[{{ $match->id }}][home]" min="0" placeholder="-"
-                                                        class="w-14 h-14 text-center text-2xl font-bold bg-white/10 border-white/10 rounded-lg focus:ring-2 focus:ring-pl-green focus:border-pl-green text-white placeholder-white/30 disabled:opacity-50 transition-all"
-                                                        value="{{ $userPred?->predicted_home ?? '' }}" {{ $isLocked ? 'disabled' : '' }}>
-
-                                                    <span class="text-white/40 font-bold">:</span>
-
-                                                    <input type="number" name="predictions[{{ $match->id }}][away]" min="0" placeholder="-"
-                                                        class="w-14 h-14 text-center text-2xl font-bold bg-white/10 border-white/10 rounded-lg focus:ring-2 focus:ring-pl-green focus:border-pl-green text-white placeholder-white/30 disabled:opacity-50 transition-all"
-                                                        value="{{ $userPred?->predicted_away ?? '' }}" {{ $isLocked ? 'disabled' : '' }}>
-                                                </div>
-
-                                                <!-- Helpers & Chips -->
-                                                <div class="flex items-center justify-between mt-4">
-                                                    <!-- Help Button -->
-                                                    <button type="button"
-                                                        @click="fetchCommentary({{ $match->id }}, '{{ addslashes($match->home_team) }}', '{{ addslashes($match->away_team) }}')"
-                                                        class="text-xs font-bold text-zinc-400 hover:text-pl-green flex items-center gap-1 transition-colors">
-                                                        <span>🔮</span> Ask Pundit
-                                                    </button>
-
-                                                    <div class="flex items-center gap-3">
-                                                        <!-- Double Chip Selector -->
-                                                        @if(!$isLocked)
-                                                            @if(!$gameweekDoubleLocked || ($userPred && $userPred->is_double_points))
-                                                                <label class="inline-flex items-center cursor-pointer group relative" title="Double Points">
-                                                                    <input type="radio" name="doubles[{{ $gameweek->id }}]" value="{{ $match->id }}"
-                                                                        class="peer sr-only"
-                                                                        @click="if(doubleId == {{ $match->id }}) { doubleId = null; $el.checked = false; } else { doubleId = {{ $match->id }}; if(defenceId == {{ $match->id }}) defenceId = null; }"
-                                                                        {{ $userPred?->is_double_points ? 'checked' : '' }}>
-
-                                                                    <div
-                                                                        class="flex items-center gap-1 px-2 py-1 rounded-full border border-white/10 bg-white/5 peer-checked:bg-pl-pink peer-checked:border-pl-pink peer-checked:shadow-[0_0_15px_rgba(255,40,130,0.4)] transition-all duration-300">
-                                                                        <div
-                                                                            class="w-3 h-3 rounded-full border-2 border-white/30 peer-checked:border-white peer-checked:bg-white transition-all">
-                                                                        </div>
-                                                                        <span
-                                                                            class="text-[10px] font-bold text-white/60 peer-checked:text-white uppercase tracking-wider group-hover:text-white transition-colors">
-                                                                            2x
-                                                                        </span>
-                                                                    </div>
-                                                                </label>
-                                                            @else
-                                                                <div class="opacity-30 cursor-not-allowed group" title="Two-times multiplier already used">
-                                                                    <div
-                                                                        class="flex items-center gap-1 px-2 py-1 rounded-full border border-white/10 bg-black/20">
-                                                                        <div class="w-3 h-3 rounded-full border-2 border-white/30"></div>
-                                                                        <span class="text-[10px] font-bold text-white/40 uppercase tracking-wider">2x</span>
-                                                                    </div>
-                                                                </div>
-                                                            @endif
-                                                        @elseif($userPred?->is_double_points)
-                                                            <span
-                                                                class="text-[10px] font-bold bg-pl-pink text-white px-2 py-1 rounded-full shadow-lg shadow-pl-pink/30 uppercase tracking-wider animate-pulse">
-                                                                🔥 2x Active
-                                                            </span>
-                                                        @endif
-
-                                                        <!-- Defence Chip Selector -->
-                                                        @if($gameweek->tournament->score_wrong_outcome_penalty > 0)
-                                                            @php
-                                                                $gameweekDefenceLocked = false;
-                                                                foreach ($gameweek->matches as $gwMatch) {
-                                                                    $gwPred = Auth::user()->predictions->where('match_id', $gwMatch->id)->first();
-                                                                    // Check if defence chip used on ANY match in this GW (even if not locked yet, standard radio behavior handles single selection, 
-                                                                    // but we need to disable if used on a LOCKED match.
-                                                                    $gwMatchLocked = $gwMatch->start_time->isPast();
-                                                                    if ($gwPred && $gwPred->is_defence_chip && $gwMatchLocked) {
-                                                                        $gameweekDefenceLocked = true;
-                                                                        break;
-                                                                    }
-                                                                }
-                                                            @endphp
-
-                                                            @if(!$isLocked)
-                                                                @if(!$gameweekDefenceLocked || ($userPred && $userPred->is_defence_chip))
-                                                                    <label class="inline-flex items-center cursor-pointer group relative"
-                                                                        title="Defence Chip (No Negative Points)">
-                                                                        <input type="radio" name="defence[{{ $gameweek->id }}]" value="{{ $match->id }}"
-                                                                            class="peer sr-only"
-                                                                            @click="if(defenceId == {{ $match->id }}) { defenceId = null; $el.checked = false; } else { defenceId = {{ $match->id }}; if(doubleId == {{ $match->id }}) doubleId = null; }"
-                                                                            {{ $userPred?->is_defence_chip ? 'checked' : '' }}>
-
-                                                                        <div
-                                                                            class="flex items-center gap-1 px-2 py-1 rounded-full border border-white/10 bg-white/5 peer-checked:bg-blue-600 peer-checked:border-blue-400 peer-checked:shadow-[0_0_15px_rgba(59,130,246,0.4)] transition-all duration-300">
-                                                                            <div
-                                                                                class="w-3 h-3 rounded-full border-2 border-white/30 peer-checked:border-white peer-checked:bg-white transition-all">
-                                                                            </div>
-                                                                            <span
-                                                                                class="text-[10px] font-bold text-white/60 peer-checked:text-white uppercase tracking-wider group-hover:text-white transition-colors">
-                                                                                🛡️
-                                                                            </span>
-                                                                        </div>
-                                                                    </label>
-                                                                @else
-                                                                    <div class="opacity-30 cursor-not-allowed group" title="Defence Chip already used">
-                                                                        <div
-                                                                            class="flex items-center gap-1 px-2 py-1 rounded-full border border-white/10 bg-black/20">
-                                                                            <div class="w-3 h-3 rounded-full border-2 border-white/30"></div>
-                                                                            <span class="text-[10px] font-bold text-white/40 uppercase tracking-wider">🛡️</span>
-                                                                        </div>
-                                                                    </div>
                                                                 @endif
-                                                            @elseif($userPred?->is_defence_chip)
-                                                                <span
-                                                                    class="text-[10px] font-bold bg-blue-600 text-white px-2 py-1 rounded-full shadow-lg shadow-blue-600/30 uppercase tracking-wider">
-                                                                    🛡️ Active
-                                                                </span>
-                                                            @endif
-                                                        @endif
-                                                    </div>
+                                                            </div>
 
-                                                </div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
                                             </div>
                                         @endforeach
                                     </div>

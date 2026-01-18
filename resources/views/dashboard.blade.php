@@ -9,7 +9,26 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
             <!-- AI Pundit Section -->
-            <div
+            <div x-data="{
+                humor: {
+                    greeting: 'The AI Pundit is warming up...',
+                    team_roast: 'Analyzing your team\'s questionable decisions...',
+                    prediction: 'Consulting the mystic football...'
+                },
+                loading: true,
+                async init() {
+                    try {
+                        const response = await fetch(`{{ route('dashboard.pundit') }}?rank={{ $rank }}`);
+                        const data = await response.json();
+                        this.humor = data;
+                    } catch (error) {
+                        console.error('Pundit unavailable', error);
+                        this.humor.greeting = 'The pundit has lost connection to the studio.';
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }"
                 class="bg-gradient-to-r from-pl-purple to-[#2f0034] overflow-hidden shadow-2xl sm:rounded-2xl border border-white/10 relative">
                 <!-- Decorative Elements -->
                 <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-pl-green blur-3xl opacity-20 rounded-full">
@@ -21,8 +40,8 @@
                     <div class="flex flex-col md:flex-row items-center gap-6">
                         <!-- Bot Avatar -->
                         <div class="flex-shrink-0">
-                            <div
-                                class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center border-2 border-pl-green shadow-[0_0_15px_rgba(0,255,135,0.3)]">
+                            <div class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center border-2 border-pl-green shadow-[0_0_15px_rgba(0,255,135,0.3)]"
+                                :class="{ 'animate-pulse': loading }">
                                 <span class="text-3xl">🤖</span>
                             </div>
                         </div>
@@ -33,17 +52,17 @@
                                 Says...</h3>
                             <div class="space-y-4">
                                 <!-- Greeting -->
-                                <div
-                                    class="bg-white/10 backdrop-blur-md rounded-tr-2xl rounded-br-2xl rounded-bl-2xl rounded-tl-sm p-5 border border-white/5">
-                                    <p class="text-white text-lg font-medium italic leading-relaxed">
-                                        "{{ $humor['greeting'] }}"
+                                <div class="bg-white/10 backdrop-blur-md rounded-tr-2xl rounded-br-2xl rounded-bl-2xl rounded-tl-sm p-5 border border-white/5 transition-opacity duration-500"
+                                    :class="{ 'opacity-50': loading }">
+                                    <p class="text-white text-lg font-medium italic leading-relaxed"
+                                        x-text="'&quot;' + humor.greeting + '&quot;'">
                                     </p>
                                 </div>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <!-- Team Roast -->
-                                    <div
-                                        class="bg-red-900/20 border border-red-500/20 rounded-xl p-4 relative overflow-hidden group">
+                                    <div class="bg-red-900/20 border border-red-500/20 rounded-xl p-4 relative overflow-hidden group transition-opacity duration-500 delay-100"
+                                        :class="{ 'opacity-50': loading }">
                                         <div
                                             class="absolute -right-4 -top-4 w-16 h-16 bg-red-500/10 blur-xl rounded-full group-hover:bg-red-500/20 transition">
                                         </div>
@@ -51,12 +70,13 @@
                                             class="text-red-400 font-bold text-xs uppercase mb-2 flex items-center gap-2">
                                             <span class="text-lg">🔥</span> On {{ Auth::user()->favorite_team }}
                                         </h4>
-                                        <p class="text-gray-300 text-sm italic">"{{ $humor['team_roast'] }}"</p>
+                                        <p class="text-gray-300 text-sm italic"
+                                            x-text="'&quot;' + humor.team_roast + '&quot;'"></p>
                                     </div>
 
                                     <!-- Prediction -->
-                                    <div
-                                        class="bg-pl-blue/10 border border-pl-blue/20 rounded-xl p-4 relative overflow-hidden group">
+                                    <div class="bg-pl-blue/10 border border-pl-blue/20 rounded-xl p-4 relative overflow-hidden group transition-opacity duration-500 delay-200"
+                                        :class="{ 'opacity-50': loading }">
                                         <div
                                             class="absolute -right-4 -top-4 w-16 h-16 bg-pl-blue/10 blur-xl rounded-full group-hover:bg-pl-blue/20 transition">
                                         </div>
@@ -64,7 +84,8 @@
                                             class="text-pl-blue font-bold text-xs uppercase mb-2 flex items-center gap-2">
                                             <span class="text-lg">🎱</span> Mystic Ball
                                         </h4>
-                                        <p class="text-gray-300 text-sm italic">"{{ $humor['prediction'] }}"</p>
+                                        <p class="text-gray-300 text-sm italic"
+                                            x-text="'&quot;' + humor.prediction + '&quot;'"></p>
                                     </div>
                                 </div>
                             </div>

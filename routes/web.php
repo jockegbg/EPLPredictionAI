@@ -14,6 +14,9 @@ Route::get('/', function () {
 Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+Route::get('/dashboard/pundit', [App\Http\Controllers\DashboardController::class, 'punditHumor'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard.pundit');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -61,6 +64,7 @@ Route::middleware('auth')->group(function () {
 
     // Leaderboard
     Route::get('/leaderboard', [App\Http\Controllers\LeaderboardController::class, 'index'])->name('leaderboard.index');
+    Route::get('/leaderboard/live', [App\Http\Controllers\LeaderboardController::class, 'liveTable'])->name('leaderboard.live');
     Route::get('/leaderboard/round/{gameweek}', [App\Http\Controllers\LeaderboardController::class, 'showRound'])->name('leaderboard.round');
 
     // Pundit's Corner
