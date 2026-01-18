@@ -77,7 +77,7 @@
 
                                                 <span class="text-xs text-pl-green font-mono mt-2 ml-7">
                                                     @if($match->status === 'in_progress')
-                                                        <div class="flex flex-col items-center">
+                                                        <div class="flex flex-col items-start">
                                                             <span class="animate-pulse text-pl-pink font-bold">
                                                                 {{ $match->home_score }} - {{ $match->away_score }}
                                                             </span>
