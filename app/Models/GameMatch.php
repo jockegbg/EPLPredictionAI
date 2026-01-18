@@ -69,8 +69,8 @@ class GameMatch extends Model
 
         // Calculate minutes elapsed since last DB update
         // We use 'updated_at' 
-        $minutesSinceUpdate = now()->diffInMinutes($this->updated_at);
-        $currentMinute = $lastMinutes + $minutesSinceUpdate;
+        $minutesSinceUpdate = (int) $this->updated_at->diffInMinutes(now());
+        $currentMinute = (int) $lastMinutes + $minutesSinceUpdate;
 
         // Logic to cap at half-time / full-time markers if we suspect it
         // This is heuristic because we don't have strict 'HT' state in DB yet (just 'in_progress')
@@ -79,12 +79,12 @@ class GameMatch extends Model
         // If we are around 45+, limit to 45+ until update pushes it over
         // Assumption: API pushes ~46 when 2nd half starts.
         if ($lastMinutes <= 45 && $currentMinute > 45) {
-            return "45+";
+            return "45+'";
         }
 
         // If we are around 90+, limit to 90+
         if ($lastMinutes <= 90 && $currentMinute > 90) {
-            return "90+";
+            return "90+'";
         }
 
         // Safety cap for extremely long intervals (e.g. sync broken for hours)

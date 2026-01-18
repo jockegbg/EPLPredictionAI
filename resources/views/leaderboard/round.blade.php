@@ -77,10 +77,17 @@
 
                                                 <span class="text-xs text-pl-green font-mono mt-2 ml-7">
                                                     @if($match->status === 'in_progress')
-                                                        <span class="animate-pulse text-pl-pink font-bold">
-                                                            {{ $match->home_score }} - {{ $match->away_score }}
-                                                            <span class="text-[10px] ml-1">{{ $match->display_minutes }}</span>
-                                                        </span>
+                                                        <div class="flex flex-col items-center">
+                                                            <span class="animate-pulse text-pl-pink font-bold">
+                                                                {{ $match->home_score }} - {{ $match->away_score }}
+                                                            </span>
+                                                            <div class="flex items-center gap-1 mt-1">
+                                                                <span
+                                                                    class="text-[10px] text-pl-green">{{ $match->display_minutes }}</span>
+                                                                <span
+                                                                    class="text-[8px] bg-red-600 text-white px-1 py-px rounded font-bold tracking-wider animate-pulse">LIVE</span>
+                                                            </div>
+                                                        </div>
                                                     @elseif($match->status === 'completed')
                                                         {{ $match->home_score }} - {{ $match->away_score }}
                                                     @else
