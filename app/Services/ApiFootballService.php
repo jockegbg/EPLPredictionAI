@@ -36,10 +36,10 @@ class ApiFootballService
     public function syncLiveScores()
     {
         // 1. Check for live matches in OUR database
-        // Matches that are 'in_progress' OR 'scheduled' and start_time <= now
+        // Matches that are 'in_progress' OR 'scheduled'/'upcoming' and start_time <= now
         $liveMatches = GameMatch::where('status', 'in_progress')
             ->orWhere(function ($q) {
-                $q->where('status', 'scheduled')
+                $q->whereIn('status', ['scheduled', 'upcoming'])
                     ->where('start_time', '<=', now());
             })->get();
 
@@ -112,7 +112,7 @@ class ApiFootballService
             '1H', '2H', 'HT', 'ET', 'P', 'BT' => 'in_progress',
             'FT', 'AET', 'PEN' => 'completed',
             'PST', 'CANC', 'ABD' => 'postponed', // or cancelled
-            default => 'scheduled',
+            default => 'upcoming', // Was 'scheduled', app uses 'upcoming'
         };
 
         // Don't revert 'completed' to 'scheduled' accidentally
