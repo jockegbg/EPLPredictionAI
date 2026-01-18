@@ -97,7 +97,14 @@ class ApiFootballService
             return;
         }
 
-        $fixtures = $response->json()['response'] ?? [];
+        $json = $response->json();
+
+        if (!empty($json['errors'])) {
+            Log::error("ApiFootball: API Error", ['errors' => $json['errors']]);
+            return;
+        }
+
+        $fixtures = $json['response'] ?? [];
 
         foreach ($fixtures as $fixture) {
             $this->processFixture($fixture);
@@ -156,9 +163,14 @@ class ApiFootballService
 
     protected function syncStuckMatches()
     {
-        // Find matches that are 'in_progress' but haven't been updated recently?
-        // Or simply ALL in_progress matches to ensure we catch the transition to Completed.
-        $stuckMatches = GameMatch::where('status', 'in_progress')->get();
+        // Find matches that are 'in_progress' OR 'upcoming' but started in the past
+        $stuckMatches = GameMatch::where(function ($q) {
+            $q->where('status', 'in_progress')
+                ->orWhere(function ($sub) {
+                    $sub->where('status', 'upcoming')
+                        ->where('start_time', '<=', now());
+                });
+        })->get();
 
         if ($stuckMatches->isEmpty()) {
             return;
@@ -186,7 +198,14 @@ class ApiFootballService
                 continue;
             }
 
-            $fixtures = $response->json()['response'] ?? [];
+            $json = $response->json();
+
+            if (!empty($json['errors'])) {
+                Log::error("ApiFootball: API Error (Stuck Matches)", ['errors' => $json['errors']]);
+                continue;
+            }
+
+            $fixtures = $json['response'] ?? [];
             foreach ($fixtures as $fixture) {
                 $this->processFixture($fixture);
             }
