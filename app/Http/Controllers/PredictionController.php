@@ -27,15 +27,18 @@ class PredictionController extends Controller
         $activeGameweeks = Gameweek::whereIn('status', ['active', 'upcoming'])
             ->with([
                 'matches' => function ($query) {
-                    $query->orderBy('start_time', 'asc');
+                    $query->where('start_time', '>', now()) // Only show future matches
+                        ->orderBy('start_time', 'asc');
                 },
                 'tournament' // Eager load tournament for settings
             ])
             ->orderBy('start_date', 'asc')
             ->get();
 
-        // Attach AI Commentary using the Service
-        // Attach AI Commentary logic removed (moved to Async AJAX call)
+        // 2. Filter out Gameweeks that have NO matches left after the filter
+        $activeGameweeks = $activeGameweeks->filter(function ($gw) {
+            return $gw->matches->isNotEmpty();
+        });
 
         return view('predictions.index', compact('activeGameweeks'));
     }
