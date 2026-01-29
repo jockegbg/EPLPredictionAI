@@ -18,30 +18,40 @@
                             <!-- Home Team -->
                             <div>
                                 <x-input-label for="home_team" :value="__('Home Team')" class="text-white" />
-                                <select id="home_team" name="home_team"
-                                    class="block mt-1 w-full rounded-md shadow-sm border-zinc-700 bg-black text-white focus:border-pl-green focus:ring-pl-green"
-                                    required>
-                                    @foreach($teams as $team)
-                                        <option value="{{ $team }}" {{ $match->home_team == $team ? 'selected' : '' }}>
-                                            {{ $team }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                @if($match->gameweek && $match->gameweek->is_custom)
+                                    <x-text-input id="home_team" class="block mt-1 w-full bg-black border-zinc-700 text-white focus:border-pl-green focus:ring-pl-green" 
+                                        type="text" name="home_team" :value="old('home_team', $match->home_team)" required />
+                                @else
+                                    <select id="home_team" name="home_team"
+                                        class="block mt-1 w-full rounded-md shadow-sm border-zinc-700 bg-black text-white focus:border-pl-green focus:ring-pl-green"
+                                        required>
+                                        @foreach($teams as $team)
+                                            <option value="{{ $team }}" {{ old('home_team', $match->home_team) == $team ? 'selected' : '' }}>
+                                                {{ $team }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                @endif
                                 <x-input-error :messages="$errors->get('home_team')" class="mt-2" />
                             </div>
 
                             <!-- Away Team -->
                             <div>
                                 <x-input-label for="away_team" :value="__('Away Team')" class="text-white" />
-                                <select id="away_team" name="away_team"
-                                    class="block mt-1 w-full rounded-md shadow-sm border-zinc-700 bg-black text-white focus:border-pl-green focus:ring-pl-green"
-                                    required>
-                                    @foreach($teams as $team)
-                                        <option value="{{ $team }}" {{ $match->away_team == $team ? 'selected' : '' }}>
-                                            {{ $team }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                @if($match->gameweek && $match->gameweek->is_custom)
+                                    <x-text-input id="away_team" class="block mt-1 w-full bg-black border-zinc-700 text-white focus:border-pl-green focus:ring-pl-green" 
+                                        type="text" name="away_team" :value="old('away_team', $match->away_team)" required />
+                                @else
+                                    <select id="away_team" name="away_team"
+                                        class="block mt-1 w-full rounded-md shadow-sm border-zinc-700 bg-black text-white focus:border-pl-green focus:ring-pl-green"
+                                        required>
+                                        @foreach($teams as $team)
+                                            <option value="{{ $team }}" {{ old('away_team', $match->away_team) == $team ? 'selected' : '' }}>
+                                                {{ $team }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                @endif
                                 <x-input-error :messages="$errors->get('away_team')" class="mt-2" />
                             </div>
                         </div>

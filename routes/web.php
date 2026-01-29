@@ -53,6 +53,8 @@ Route::middleware('auth')->group(function () {
     Route::post('admin/gameweeks/{gameweek}/matches', [App\Http\Controllers\Admin\GameMatchController::class, 'store'])->name('admin.matches.store');
     Route::get('admin/matches/{match}/edit', [App\Http\Controllers\Admin\GameMatchController::class, 'edit'])->name('admin.matches.edit');
     Route::put('admin/matches/{match}', [App\Http\Controllers\Admin\GameMatchController::class, 'update'])->name('admin.matches.update');
+    Route::delete('admin/matches/{match}', [App\Http\Controllers\Admin\GameMatchController::class, 'destroy'])->name('admin.matches.destroy');
+
 
     // Prediction Routes
     Route::get('/predictions', [PredictionController::class, 'index'])->name('predictions.index');
