@@ -17,6 +17,15 @@
                             <x-text-input id="name" class="block mt-1 w-full" type="text" name="name"
                                 :value="old('name', $gameweek->name)" required autofocus />
                         </div>
+                        <div class="mb-4">
+                            <label for="is_custom" class="inline-flex items-center">
+                                <input id="is_custom" type="checkbox"
+                                    class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:focus:ring-indigo-600"
+                                    name="is_custom" value="1" {{ old('is_custom', $gameweek->is_custom) ? 'checked' : '' }}>
+                                <span
+                                    class="ms-2 text-sm text-gray-600 dark:text-gray-400">{{ __('Custom Round (Manual Teams)') }}</span>
+                            </label>
+                        </div>
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             <div>
                                 <x-input-label for="start_date" :value="__('Start Date')" />
